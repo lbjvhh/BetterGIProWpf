@@ -31,18 +31,20 @@ public partial class PluginPage : Page
     {
         var added = _manager.ScanExternal();
         Refresh();
-        DetailText.Text = added > 0 ? $"发现并加载 {added} 个外置插件" : "未发现新的外置插件（检查 Plugins 目录下 .dll 或含 manifest.json 的子目录）";
+        DetailText.Text = added > 0 ? $"发现并加载 {added} 个外置插件" : "未发现新的外置插件";
     }
 
     private void Enable_Click(object sender, RoutedEventArgs e)
     {
-        if (PluginList.SelectedItem is IGamePlugin p) { DetailText.Text = _manager.Enable(p.Name); Refresh(); }
+        if (PluginList.SelectedItem is IGamePlugin p)
+        { DetailText.Text = _manager.Enable(p.Name); Refresh(); }
         else DetailText.Text = "请先选择插件";
     }
 
     private void Disable_Click(object sender, RoutedEventArgs e)
     {
-        if (PluginList.SelectedItem is IGamePlugin p) { DetailText.Text = _manager.Disable(p.Name); Refresh(); }
+        if (PluginList.SelectedItem is IGamePlugin p)
+        { DetailText.Text = _manager.Disable(p.Name); Refresh(); }
         else DetailText.Text = "请先选择插件";
     }
 }

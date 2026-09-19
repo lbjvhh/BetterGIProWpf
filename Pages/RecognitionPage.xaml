@@ -1,16 +1,49 @@
-<Page x:Class="BetterGIProWpf.Pages.RecognitionPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="{DynamicResource BgMain}">
-  <Grid Margin="24"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-    <TextBlock Text="Recognition Layer" FontSize="20" FontWeight="SemiBold"/>
-    <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,12,0,12"><StackPanel>
-      <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-        <Button Content="Multi-scale Match" Width="130" Margin="0,0,8,0" Click="Template_Click"/>
-        <Button Content="DTW Align" Width="100" Margin="0,0,8,0" Click="Dtw_Click"/>
-        <Button Content="Overlay->Script" Width="140" Margin="0,0,8,0" Click="Overlay_Click"/>
-        <Button Content="Channel B" Width="110" Margin="0,0,8,0" Click="ChannelB_Click"/>
-        <Button Content="NitroGen Bridge" Width="130" Margin="0,0,8,0" Click="Bridge_Click"/>
-        <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}"/>
-      </StackPanel>
-    </StackPanel></Border>
-    <Border Grid.Row="2" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8"><TextBox x:Name="ResultText" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Background="White" BorderThickness="0" Padding="10"/></Border>
-  </Grid>
+<Page x:Class="BetterGIProWpf.Pages.RecognitionPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{DynamicResource BgMain}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="识别层 · GitHub 开源整合落地" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+        <TextBlock Text="模板匹配 / 悬浮窗识别 / DTW 对齐 / 外部引擎桥接 / 运行时防御 / 规划器守护 / 数据集导入"
+                   Foreground="{DynamicResource TextMuted}" Margin="0,4,0,0"/>
+        <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
+                BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,12,0,12">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Content="多尺度模板匹配" Width="130" Margin="0,0,8,0" Click="Template_Click"/>
+                    <Button Content="旋转不变匹配" Width="120" Margin="0,0,8,0" Click="Rotate_Click"/>
+                    <Button Content="特征匹配(ORB)" Width="120" Margin="0,0,8,0" Click="Orb_Click"/>
+                    <Button Content="DTW 时序对齐" Width="120" Margin="0,0,8,0" Click="Dtw_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Content="按键悬浮窗→战斗脚本" Width="160" Margin="0,0,8,0" Click="Overlay_Click"/>
+                    <Button Content="通道B 本地动作推断" Width="150" Margin="0,0,8,0" Click="ChannelB_Click"/>
+                    <Button Content="YOLO/OCR/Whisper 插槽自检" Width="170" Margin="0,0,8,0" Click="Slot_Click"/>
+                    <Button Content="NitroGen 外部引擎探测" Width="160" Margin="0,0,8,0" Click="Bridge_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Content="运行时防御(ActFovea)" Width="170" Margin="0,0,8,0" Click="Guard_Click"/>
+                    <Button Content="规划器守护(Harness)" Width="170" Margin="0,0,8,0" Click="Planner_Click"/>
+                    <Button Content="数据集导入(WildWorld)" Width="180" Margin="0,0,8,0" Click="Dataset_Click"/>
+                    <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Content="双轨执行联动验证" Width="170" Margin="0,0,8,0" Click="DualTrack_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="脚本输出目录" Width="100" VerticalAlignment="Center"/>
+                    <TextBox x:Name="OutRootBox" Width="360" VerticalContentAlignment="Center" Text="C:\BetterGI\User"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+        <Border Grid.Row="2" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8">
+            <TextBox x:Name="ResultText" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
+                     Background="White" BorderThickness="0" Padding="10" VerticalScrollBarVisibility="Auto"/>
+        </Border>
+    </Grid>
 </Page>
