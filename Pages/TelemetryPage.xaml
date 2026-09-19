@@ -26,6 +26,7 @@
                     <Button Content="模拟网络错误" Width="120" Click="EmergencyNet_Click"/>
                     <Button Content="模拟封禁提示" Width="120" Margin="8,0,0,0" Click="EmergencyBan_Click"/>
                     <Button Content="恢复执行" Width="90" Margin="8,0,0,0" Click="Resume_Click"/>
+                    <Button Content="🌐 网络检测" Width="100" Margin="8,0,0,0" Click="NetCheck_Click"/>
                     <Button Content="安全复位(桥)" Width="110" Margin="8,0,0,0" Click="SafetyReset_Click" ToolTip="POST stream_bridge /safety_reset，解除安全停机"/>
                     <TextBlock x:Name="EmerStatus" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
@@ -35,10 +36,24 @@
                     <Button Content="🔍 对比变化" Width="100" Margin="8,0,0,0" Click="UiDiff_Click"/>
                     <TextBlock x:Name="UiDiffStatus" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="异常诊断" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="ErrBox" Width="280" VerticalContentAlignment="Center" Text="不在地图界面"/>
+                    <Button Content="诊断" Width="70" Margin="8,0,0,0" Click="Diag_Click"/>
+                    <Button Content="导出历史" Width="90" Margin="8,0,0,0" Click="DiagExport_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="场景感知" Width="90" VerticalAlignment="Center"/>
+                    <Button Content="🎵 音频场景(1s采样)" Width="150" Click="AudioScene_Click" ToolTip="NAudio 采样 1 秒 → CPU 特征 → 战斗/探索/对话/菜单/加载分类"/>
+                    <Button Content="🔫 YOLO检测帧" Width="120" Margin="8,0,0,0" Click="YoloDetect_Click" ToolTip="抓当前帧 → vision_server /yolo 目标检测"/>
+                    <Button Content="🏷 装备检测" Width="100" Margin="8,0,0,0" Click="EquipDetect_Click" ToolTip="抓当前帧 → vision_server /equipment_detect（YOLO 图标计数）"/>
+                    <TextBlock x:Name="SceneStatus" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
+                </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="执行回放" Width="90" VerticalAlignment="Center"/>
                     <Button Content="记录一次执行(演示)" Width="140" Click="Replay_Click"/>
                     <Button Content="对比两次执行" Width="110" Margin="8,0,0,0" Click="Compare_Click"/>
+                    <Button Content="📼 导出最近回放" Width="130" Margin="8,0,0,0" Click="ExportReplay_Click"/>
                 </StackPanel>
             </StackPanel>
         </Border>
