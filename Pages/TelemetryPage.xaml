@@ -8,12 +8,16 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+
         <TextBlock Text="状态仪表盘 · 应急中心 · 执行回放" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+
         <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
                 BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,12,0,12">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <Button Content="▶ 采样指标(60s演示)" Width="140" Click="Sample_Click"/>
+                    <Button Content="▶ 实时监控(1Hz)" Width="140" Click="StartLive_Click"/>
+                    <Button Content="⏹ 停止监控" Width="100" Margin="8,0,0,0" Click="StopLive_Click"/>
+                    <Button Content="📊 采样指标(60s演示)" Width="140" Margin="8,0,0,0" Click="Sample_Click"/>
                     <Button Content="导出 CSV" Width="90" Margin="8,0,0,0" Click="ExportCsv_Click"/>
                     <TextBlock x:Name="DashSummary" VerticalAlignment="Center" Margin="16,0,0,0" Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
@@ -22,7 +26,14 @@
                     <Button Content="模拟网络错误" Width="120" Click="EmergencyNet_Click"/>
                     <Button Content="模拟封禁提示" Width="120" Margin="8,0,0,0" Click="EmergencyBan_Click"/>
                     <Button Content="恢复执行" Width="90" Margin="8,0,0,0" Click="Resume_Click"/>
+                    <Button Content="安全复位(桥)" Width="110" Margin="8,0,0,0" Click="SafetyReset_Click" ToolTip="POST stream_bridge /safety_reset，解除安全停机"/>
                     <TextBlock x:Name="EmerStatus" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="UI检测" Width="90" VerticalAlignment="Center"/>
+                    <Button Content="📐 设基线" Width="100" Click="UiBaseline_Click"/>
+                    <Button Content="🔍 对比变化" Width="100" Margin="8,0,0,0" Click="UiDiff_Click"/>
+                    <TextBlock x:Name="UiDiffStatus" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="执行回放" Width="90" VerticalAlignment="Center"/>
@@ -31,6 +42,7 @@
                 </StackPanel>
             </StackPanel>
         </Border>
+
         <Border Grid.Row="2" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8">
             <TextBox x:Name="TelemetryLog" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
                      Background="White" BorderThickness="0" Padding="10" VerticalScrollBarVisibility="Auto"/>

@@ -1,5 +1,6 @@
 using BetterGIProWpf.Services;
 using BetterGIProWpf.Services.Knowledge;
+using BetterGIProWpf.Services.Companion;
 
 namespace BetterGIProWpf;
 
@@ -20,4 +21,24 @@ public static class AppState
 
     /// <summary>P1-11：最近一次识别时间戳。</summary>
     public static DateTime LastRecognitionAt { get; set; } = DateTime.MinValue;
+
+    /// <summary>P2-3：全局输入拟人化（脚本页可调强度，注入链统一使用抖动延迟）。</summary>
+    public static Services.Humanize.HumanizeInput Humanize { get; } = new();
+
+    /// <summary>全局 AI 客户端（OpenAI 兼容）。Settings 页保存后会重建。</summary>
+    public static AiService Ai { get; private set; } = new(AppConfig.Ai);
+
+    /// <summary>模块9：多模态游戏状态问答单例。UseExternal=true 时自动挂载 OpenAI 后端。</summary>
+    public static GameQaService Qa { get; } = new();
+
+    public static void ReloadAi()
+    {
+        Ai = new AiService(AppConfig.Ai);
+        if (AppConfig.Ai.UseExternal && !string.IsNullOrWhiteSpace(AppConfig.Ai.ApiKey))
+            Qa.Backend = new OpenAiVisionBackend(Ai);
+        else
+            Qa.Backend = null;
+    }
+
+    static AppState() { ReloadAi(); }
 }
