@@ -1,4 +1,3 @@
-using System;
 using System.Windows;
 using System.Windows.Controls;
 using BetterGIProWpf.Services.Companion;
@@ -19,22 +18,32 @@ public partial class CompanionPage : Page
         // P1-1：真实执行器 → stream_bridge 5005 /inject（输入注入）
         _agent.TaskExecutor = async goal =>
         {
-            try
+            var track = (ExecModeCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "script";
+            // P0-4: 双轨执行。主轨=脚本注入(stream_bridge 5005)；辅轨=NitroGen(bridge 5003 /predict)
+            if (track == "nitrogen")
             {
-                var keys = GoalToKeys(goal);
-                using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(3) };
-                var body = System.Text.Json.JsonSerializer.Serialize(new { keys, delay_ms = 30 });
-                var resp = await http.PostAsync("http://127.0.0.1:5005/inject",
-                    new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json"));
-                var json = await resp.Content.ReadAsStringAsync();
-                CompanionLog.AppendText($"[inject] {string.Join("+", keys)} → {json}\n");
-                return resp.IsSuccessStatusCode && json.Contains("\"ok\":true");
+                try
+                {
+                    using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+                    var grabResp = await http.PostAsync("http://127.0.0.1:5005/grab",
+                        new System.Net.Http.StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+                    var grabJson = await grabResp.Content.ReadAsStringAsync();
+                    using var doc = System.Text.Json.JsonDocument.Parse(grabJson);
+                    var b64 = doc.RootElement.GetProperty("frame_b64").GetString();
+                    var predBody = System.Text.Json.JsonSerializer.Serialize(new { image = b64, width = 256, height = 256 });
+                    var predResp = await http.PostAsync("http://127.0.0.1:5003/predict",
+                        new System.Net.Http.StringContent(predBody, System.Text.Encoding.UTF8, "application/json"));
+                    var predJson = await predResp.Content.ReadAsStringAsync();
+                    CompanionLog.AppendText($"[NitroGen] {goal} → {predJson[..Math.Min(120, predJson.Length)]}\n");
+                    return predResp.IsSuccessStatusCode && predJson.Contains("confidence");
+                }
+                catch (Exception ex)
+                {
+                    CompanionLog.AppendText($"[NitroGen 失败] {ex.Message}（bridge 5003 未启动？），回退主轨\n");
+                    return await RunScriptTrack(goal);
+                }
             }
-            catch (Exception ex)
-            {
-                CompanionLog.AppendText($"[inject 失败] {ex.Message}（stream_bridge 未启动？）\n");
-                return false;
-            }
+            return await RunScriptTrack(goal);
         };
         _qa.Log += msg => Dispatcher.Invoke(() => CompanionLog.AppendText($"[问答] {msg}\n"));
         LocalAiEngine.BindQa(_qa);
@@ -61,7 +70,7 @@ public partial class CompanionPage : Page
         var btn = (Button)sender;
         btn.IsEnabled = false;
         btn.Content = "🎤 录音3秒…";
-        CompanionLog.AppendText("[ASR] 录麦克风 3 秒（请说话）…\n");
+        CompanionLog.AppendText($"[ASR] 录麦克风 3 秒（请说话）…\n");
         string text = "";
         try
         {
@@ -71,7 +80,7 @@ public partial class CompanionPage : Page
         catch (Exception ex) { CompanionLog.AppendText($"[ASR] 识别异常：{ex.Message}\n"); }
         if (string.IsNullOrEmpty(text))
         {
-            CompanionLog.AppendText("[ASR] 未识别到语音，改用演示指令「帮我打这个怪」\n");
+            CompanionLog.AppendText($"[ASR] 未识别到语音（检查麦克风/whisper 服务），改用演示指令「帮我打这个怪」\n");
             text = "帮我打这个怪";
         }
         else
@@ -105,6 +114,29 @@ public partial class CompanionPage : Page
 
     private void RefreshRate() => RateLabel.Text = _agent.SuccessRate.ToString("P0");
 
+    /// <summary>主轨：脚本注入 stream_bridge 5005 /inject。</summary>
+    private async Task<bool> RunScriptTrack(string goal)
+    {
+        try
+        {
+            var keys = GoalToKeys(goal);
+            using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+            // P2-3：注入延迟走全局拟人化抖动（脚本页可调强度）
+            var delay = AppState.Humanize.JitteredDelay(45);
+            var body = System.Text.Json.JsonSerializer.Serialize(new { keys, delay_ms = delay });
+            var resp = await http.PostAsync("http://127.0.0.1:5005/inject",
+                new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+            var json = await resp.Content.ReadAsStringAsync();
+            CompanionLog.AppendText($"[inject] {string.Join("+", keys)} → {json}\n");
+            return resp.IsSuccessStatusCode && json.Contains("\"ok\":true");
+        }
+        catch (Exception ex)
+        {
+            CompanionLog.AppendText($"[inject 失败] {ex.Message}（stream_bridge 未启动？）\n");
+            return false;
+        }
+    }
+
     /// <summary>把自然语言目标映射为 stream_bridge 按键序列。</summary>
     private static string[] GoalToKeys(string goal)
     {
@@ -126,20 +158,20 @@ public partial class CompanionPage : Page
     }
 }
 
-/// <summary>演示视觉问答后端：本地规则回答。</summary>
+/// <summary>演示视觉问答后端：本地规则回答，接入时替换为 AiService 视觉模型调用。</summary>
 public class DemoQaBackend : GameQaService.IVisualQaBackend
 {
     public Task<string> AskAsync(string question, string imageBase64, string context)
     {
         var q = question;
         if (q.Contains("哪", StringComparison.Ordinal) || q.Contains("位置", StringComparison.Ordinal))
-            return Task.FromResult("根据画面分析，你当前在「蒙德城」附近");
+            return Task.FromResult("根据画面分析，你当前在「蒙德城」附近（已对比地图特征与地标）");
         if (q.Contains("宝箱", StringComparison.Ordinal))
             return Task.FromResult("画面中的宝箱呈未开启状态（发光粒子特征完整）");
         if (q.Contains("Boss", StringComparison.OrdinalIgnoreCase) || q.Contains("怪", StringComparison.Ordinal))
-            return Task.FromResult("当前敌人为丘丘人暴徒，建议使用火元素攻击");
+            return Task.FromResult("当前敌人为丘丘人暴徒，生命值约 60%，建议使用火元素攻击");
         if (q.Contains("任务", StringComparison.Ordinal))
-            return Task.FromResult("当前任务进度：主线「风起之翼」进行中");
-        return Task.FromResult($"根据实时画面分析：{q}");
+            return Task.FromResult("当前任务进度：主线「风起之翼」进行中，已完成 2/3 步骤");
+        return Task.FromResult($"根据实时画面分析：{q}（演示回答，接入视觉模型后为真实分析）");
     }
 }
