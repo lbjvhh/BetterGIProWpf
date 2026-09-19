@@ -44,6 +44,7 @@ public sealed class ContinuousRecognizer : IDisposable
     public bool IsRunning { get; private set; }
     public int FrameCount { get { lock (_lock) return _frameCount; } }
     public int StepCount { get { lock (_lock) return _steps.Count; } }
+    public IReadOnlyList<Step> GetSteps() { lock (_lock) return _steps.ToList(); }
 
     public static (string Action, string Target) DefaultOcrToAction(string text)
     {
