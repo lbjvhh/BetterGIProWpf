@@ -6,31 +6,29 @@ using NAudio.Wave;
 
 namespace BetterGIProWpf.Services.ASR;
 
-/// <summary>
-/// 真实语音识别：录麦克风 → WAV → vision_server(5004) /whisper。
-/// </summary>
 public sealed class RealAsrService
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
     private const string VisionUrl = "http://127.0.0.1:5004";
 
-    public byte[] RecordWav(int seconds = 3)
+    public byte[] RecordWav(int seconds = 3) => Task.Run(() => RecordWavSync(seconds)).GetAwaiter().GetResult();
+
+    private static byte[] RecordWavSync(int seconds)
     {
-        using var waveIn = new WaveInEvent
-        {
-            WaveFormat = new WaveFormat(16000, 16, 1)
-        };
+        using var waveIn = new WaveInEvent { WaveFormat = new WaveFormat(16000, 16, 1) };
         using var ms = new MemoryStream();
         var tcs = new TaskCompletionSource();
         waveIn.DataAvailable += (s, e) => ms.Write(e.Buffer, 0, e.BytesRecorded);
-        waveIn.RecordingStopped += (s, e) => tcs.SetResult();
+        waveIn.RecordingStopped += (s, e) => tcs.TrySetResult();
         waveIn.StartRecording();
-        tcs.Task.Wait(TimeSpan.FromSeconds(seconds + 1));
+        tcs.Task.Wait(TimeSpan.FromSeconds(seconds + 2));
         waveIn.StopRecording();
         using var outMs = new MemoryStream();
-        using var writer = new WaveFileWriter(outMs, waveIn.WaveFormat);
-        var bytes = ms.ToArray();
-        writer.Write(bytes, 0, bytes.Length);
+        using (var writer = new WaveFileWriter(outMs, waveIn.WaveFormat))
+        {
+            var bytes = ms.ToArray();
+            writer.Write(bytes, 0, bytes.Length);
+        }
         return outMs.ToArray();
     }
 

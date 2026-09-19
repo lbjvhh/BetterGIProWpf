@@ -1,6 +1,7 @@
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 
 namespace BetterGIProWpf.Services;
@@ -30,7 +31,8 @@ public class AiService
 
     public async Task<string> ChatAsync(string system, string user)
     {
-        return await PostAsync(new[] {
+        return await PostAsync(new[]
+        {
             new { role = "system", content = system },
             new { role = "user", content = user },
         });
@@ -50,25 +52,34 @@ public class AiService
             var b64 = Convert.ToBase64String(File.ReadAllBytes(path));
             content.Add(new { type = "image_url", image_url = new { url = $"data:{mime};base64,{b64}", detail = "low" } });
         }
-        return await PostAsync(new object[] {
-            new { role = "system", content = system },
-            new { role = "user", content },
-        });
+        return await PostAsync(new object[] { new { role = "system", content = system }, new { role = "user", content } });
+    }
+
+    public async Task<string> ChatWithBase64ImagesAsync(string system, string user, IEnumerable<string> imageBase64s)
+    {
+        var list = imageBase64s?.Where(b => !string.IsNullOrWhiteSpace(b)).ToList() ?? new List<string>();
+        if (!IsVisionModel(_cfg.Model) || list.Count == 0)
+            return await ChatAsync(system, user);
+        var content = new List<object> { new { type = "text", text = user } };
+        foreach (var b64 in list)
+            content.Add(new { type = "image_url", image_url = new { url = $"data:image/jpeg;base64,{b64}", detail = "low" } });
+        return await PostAsync(new object[] { new { role = "system", content = system }, new { role = "user", content } });
     }
 
     private async Task<string> PostAsync(object messages)
     {
-        if (string.IsNullOrWhiteSpace(_cfg.ApiKey))
-            throw new InvalidOperationException("未配置 API Key");
+        if (string.IsNullOrWhiteSpace(_cfg.ApiKey)) throw new InvalidOperationException("未配置 API Key");
         using var req = new HttpRequestMessage(HttpMethod.Post, _cfg.BaseUrl.TrimEnd('/') + "/chat/completions");
         req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + _cfg.ApiKey);
         var payload = new { model = _cfg.Model, messages, temperature = 0.3 };
         req.Content = JsonContent.Create(payload);
         using var resp = await _http.SendAsync(req);
         var body = await resp.Content.ReadAsStringAsync();
-        if (!resp.IsSuccessStatusCode)
-            throw new HttpRequestException($"AI 接口 {resp.StatusCode}: {(body.Length > 500 ? body[..500] : body)}");
+        if (!resp.IsSuccessStatusCode) throw new HttpRequestException($"AI 接口 {resp.StatusCode}: {Truncate(body)}");
         using var doc = JsonDocument.Parse(body);
-        return doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+        try { return doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? ""; }
+        catch { throw new InvalidOperationException("AI 返回格式异常: " + Truncate(body)); }
     }
+
+    private static string Truncate(string s) => s.Length > 500 ? s[..500] : s;
 }

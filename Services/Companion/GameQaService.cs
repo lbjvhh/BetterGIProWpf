@@ -62,7 +62,10 @@ public sealed class OpenAiVisionBackend : GameQaService.IVisualQaBackend
 
     public async Task<string> AskAsync(string question, string imageBase64, string context)
     {
-        var sys = "你是原神/通用游戏的实时视觉助手。基于用户提供的最新游戏画面和对话历史，用中文简洁回答。回答控制在 60 字以内。\n对话历史：\n" + context;
+        var sys = "你是原神/通用游戏的实时视觉助手。基于用户提供的最新游戏画面和对话历史，用中文简洁回答。" +
+                  "回答控制在 60 字以内。若画面无法识别，直接说明。\n对话历史：\n" + context;
+        if (!string.IsNullOrWhiteSpace(imageBase64) && imageBase64.Length > 1024)
+            return await _ai.ChatWithBase64ImagesAsync(sys, question, new[] { imageBase64 });
         return await _ai.ChatAsync(sys, question);
     }
 }
