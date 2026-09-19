@@ -1,35 +1,23 @@
-# BetterGIProWpf
+# BetterGI Pro WPF
 
-BetterGI Pro WPF - 融合 NitroGen + PaddleOCR + YOLO + Whisper 的游戏自动化助手。
+.NET 8 WPF + Python 推理服务的原神融合自动化助手。
 
 ## 架构
 
-- **C# WPF 前端**：主 UI、攻略浏览器、AI 队友、脚本管理
-- **Python 推理服务**（vision_server.py :5004）：YOLO / PaddleOCR PP-OCRv5 / faster-whisper
-- **Python 串流服务**（stream_bridge.py :5005）：窗口捕获 + 输入注入 + 安全停机
-- **NitroGen 桥接**（nitrogen_bridge_server.py :5003）：视觉-动作模型推理
+- `BetterGIProWpf/` — C# WPF 主程序（26 功能模块 + 插件系统）
+- `nitrogen_bridge/` — Python HTTP 推理服务
+  - `vision_server.py` (5004): YOLOv8s + PaddleOCR PP-OCRv5 + faster-whisper
+  - `nitrogen_bridge_server.py` (5003): HTTP→ZMQ bridge to NitroGen serve.py
+  - `stream_bridge.py` (5005): window capture + input inject + safety OCR
 
-## 真实模型链路
+## 本地模型权重（不推 GitHub，放发布目录 Models/）
 
-| 模块 | 权重 | 延迟 |
-|------|------|------|
-| NitroGen | ng.pt 1.88GB | 2.0s |
-| YOLO | yolov8s.onnx 42MB | 60ms |
-| PaddleOCR | PP-OCRv5 server det+rec | 800ms |
-| Whisper | faster-whisper small int8 | 1s |
+- `Models/ng.pt` — NitroGen 1.88GB
+- `Models/yolo/yolov8s.onnx` — 42MB
+- `Models/ppocrv5/{det,rec}/inference.onnx` — 170MB
+- `Models/ppocrv5/rec/ppocr_keys_v1.txt` — 18383 chars
+- `Models/whisper/` — faster-whisper-small int8
 
-## 功能
+## CI
 
-- 内置攻略浏览器（WebView2 + 抓帧 + 真实 OCR + NitroGen 动作生成）
-- 语音指令（NAudio 录音 → whisper 识别）
-- 紧急情况自动停机（OCR 检测风险词 → 500ms 停止输入）
-- GitHub 脚本仓库直连（huiyadanli/bettergi-scripts-list）
-- 回归测试视频集（5 类基准：跑图/战斗/采集/对话/传送）
-
-## 构建
-
-```bash
-dotnet build BetterGIProWpf.csproj -c Release
-dotnet run --project tests/SmokeTests.csproj -c Release
-dotnet publish BetterGIProWpf.csproj -c Release -r win-x64 --self-contained
-```
+`.github/workflows/regression.yml`：push 跑 Python 单测 + .NET build；周日跑自托管 GPU 实跑回归。
