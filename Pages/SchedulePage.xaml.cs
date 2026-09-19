@@ -9,7 +9,12 @@ public partial class SchedulePage : Page
     public SchedulePage()
     {
         InitializeComponent();
-        Loaded += (_, _) => { AppState.Scheduler.Tick += OnTick; AppState.Scheduler.Start(); Render(); };
+        Loaded += (_, _) =>
+        {
+            AppState.Scheduler.Tick += OnTick;
+            AppState.Scheduler.Start();
+            Render();
+        };
         Unloaded += (_, _) => AppState.Scheduler.Tick -= OnTick;
     }
 
@@ -22,14 +27,19 @@ public partial class SchedulePage : Page
 
     private void OnTick(CronJob job)
     {
-        Dispatcher.Invoke(() => { StatusText.Text = $"⏰ 到点执行: {job.Name} ({job.Action}) @ {DateTime.Now:HH:mm:ss}"; Render(); });
+        Dispatcher.Invoke(() =>
+        {
+            StatusText.Text = $"⏰ 到点执行: {job.Name} ({job.Action}) @ {DateTime.Now:HH:mm:ss}";
+            Render();
+        });
     }
 
     private void Add_Click(object sender, RoutedEventArgs e)
     {
         var action = (JobAction.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "capture";
         AppState.Scheduler.AddOrUpdate(new CronJob { Name = JobName.Text.Trim(), Cron = JobCron.Text.Trim(), Action = action });
-        Render(); StatusText.Text = "已添加";
+        Render();
+        StatusText.Text = "已添加";
     }
 
     private void Delete_Click(object sender, RoutedEventArgs e)
