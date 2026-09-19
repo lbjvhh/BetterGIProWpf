@@ -28,11 +28,11 @@
                     <TextBlock Text="  资源管理：水晶块目标" Width="150" VerticalAlignment="Center" Margin="12,0,0,0"/>
                     <TextBox x:Name="TargetBox" Width="80" VerticalContentAlignment="Center" Text="1000"/>
                     <Button Content="生成建议" Width="90" Margin="8,0,0,0" Click="Resource_Click"/>
+                    <Button Content="从OCR采集点" Width="110" Margin="8,0,0,0" Click="HarvestFromOcr_Click"/>
                     <TextBlock Text="  翻译" Width="50" VerticalAlignment="Center" Margin="12,0,0,0"/>
                     <TextBox x:Name="TransBox" Width="140" VerticalContentAlignment="Center" Text="Statue of The Seven"/>
                     <Button Content="译" Width="40" Margin="8,0,0,0" Click="Translate_Click"/>
                 </StackPanel>
-                <!-- P1-9：多模态游戏状态问答 -->
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                     <TextBlock Text="问答" Width="90" VerticalAlignment="Center"/>
                     <TextBox x:Name="QaBox" Width="380" VerticalContentAlignment="Center"
