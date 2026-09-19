@@ -1,0 +1,8 @@
+﻿# 测试战斗脚本
+# 由 BetterGI Pro 自动生成
+skill: 元素战技
+wait: 1.0
+skill: 元素爆发
+wait: 2.0
+attack: 普攻
+wait: 0.5
