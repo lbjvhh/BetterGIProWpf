@@ -1,0 +1,22 @@
+<Page x:Class="BetterGIProWpf.Pages.SettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{DynamicResource BgMain}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
+        <StackPanel MaxWidth="600">
+            <TextBlock Text="设置" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" Margin="0,0,0,12"/>
+            <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16">
+                <StackPanel>
+                    <TextBlock Text="BetterGI Pro · WPF 版" FontWeight="SemiBold"/>
+                    <TextBlock Text="技术栈：.NET 8 / WPF / WebView2" Foreground="{DynamicResource TextMuted}" Margin="0,4,0,0"/>
+                    <TextBlock Text="由 BetterGIPro (Electron) 核心能力以 C# 重写而来：" Foreground="{DynamicResource TextMuted}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="· 内置攻略浏览器（WebView2 + 逐帧截图 + 视觉 AI）" Foreground="{DynamicResource TextMuted}"/>
+                    <TextBlock Text="· 游戏自动启动（注册表探测 + 窗口定位）" Foreground="{DynamicResource TextMuted}"/>
+                    <TextBlock Text="· AI 多模态视觉服务" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,12"/>
+                    <TextBlock Text="备注：自动拾取/剧情等实时触发的视觉识别需接入 cvAutoTrack 类视觉模型模块，当前为开关与行为层骨架。"
+                               Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" FontSize="12"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
