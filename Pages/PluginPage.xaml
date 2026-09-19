@@ -1,51 +1,6 @@
-<Page x:Class="BetterGIProWpf.Pages.PluginPage"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="{DynamicResource BgMain}">
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <TextBlock Text="插件管理 · 全部功能以插件形式融入" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
-        <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
-                BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,12,0,12">
-            <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <TextBlock Text="插件目录" Width="90" VerticalAlignment="Center"/>
-                    <TextBox x:Name="PluginDirBox" Width="430" VerticalContentAlignment="Center"
-                             Text="" ToolTip="外置插件目录（.dll 程序集插件 / manifest.json 脚本插件）"/>
-                    <Button Content="扫描外置插件" Width="110" Margin="8,0,0,0" Click="Scan_Click"/>
-                    <Button Content="启用" Width="70" Margin="8,0,0,0" Click="Enable_Click"/>
-                    <Button Content="禁用" Width="70" Margin="8,0,0,0" Click="Disable_Click"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="插件统计" Width="90" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="StatsText" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}"/>
-                </StackPanel>
-            </StackPanel>
-        </Border>
-        <Border Grid.Row="2" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <ListView x:Name="PluginList" SelectionMode="Single">
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn Header="名称" Width="220" DisplayMemberBinding="{Binding Name}"/>
-                            <GridViewColumn Header="版本" Width="70" DisplayMemberBinding="{Binding Version}"/>
-                            <GridViewColumn Header="类型" Width="70" DisplayMemberBinding="{Binding Kind}"/>
-                            <GridViewColumn Header="状态" Width="90" DisplayMemberBinding="{Binding Status}"/>
-                            <GridViewColumn Header="描述" Width="520" DisplayMemberBinding="{Binding Description}"/>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-                <TextBox Grid.Row="1" x:Name="DetailText" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
-                         Background="White" BorderThickness="0" Padding="10" Height="120" VerticalScrollBarVisibility="Auto"/>
-            </Grid>
-        </Border>
-    </Grid>
+<Page x:Class="BetterGIProWpf.Pages.PluginPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="{DynamicResource BgMain}">
+  <Grid Margin="24"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <TextBlock Text="Plugin Manager" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
+    <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8"><ListView x:Name="PluginList"/></Border>
+  </Grid>
 </Page>

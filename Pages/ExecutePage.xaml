@@ -1,28 +1,12 @@
-<Page x:Class="BetterGIProWpf.Pages.ExecutePage"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="{DynamicResource BgMain}">
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <TextBlock Text="操作执行" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" Margin="0,0,0,12"/>
-        <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8">
-            <ListBox x:Name="StepList" Padding="8" BorderThickness="0">
-                <ListBoxItem Content="（暂无步骤。请先用「攻略浏览器」识别视频，或从 AI 生成）"/>
-            </ListBox>
-        </Border>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
-            <TextBlock Text="执行模式:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <ComboBox x:Name="ModeBox" Width="150" Margin="0,0,12,0" SelectedIndex="0">
-                <ComboBoxItem Content="主轨：任务序列" Tag="main"/>
-                <ComboBoxItem Content="辅轨：端到端代理" Tag="agent"/>
-            </ComboBox>
-            <Button x:Name="StartBtn" Content="▶ 开始执行" Width="110" Margin="0,0,8,0" Click="StartBtn_Click"/>
-            <Button x:Name="StopBtn" Content="■ 停止" Width="80" IsEnabled="False" Click="StopBtn_Click"/>
-            <TextBlock x:Name="StatusText" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
-        </StackPanel>
-    </Grid>
+<Page x:Class="BetterGIProWpf.Pages.ExecutePage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="{DynamicResource BgMain}">
+  <Grid Margin="24"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <TextBlock Text="Execute" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
+    <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8"><ListBox x:Name="StepList" Padding="8" BorderThickness="0"/></Border>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
+      <ComboBox x:Name="ModeBox" Width="150" Margin="0,0,12,0" SelectedIndex="0"><ComboBoxItem Content="Main track" Tag="main"/><ComboBoxItem Content="Agent track" Tag="agent"/></ComboBox>
+      <Button x:Name="StartBtn" Content="Start" Width="110" Margin="0,0,8,0" Click="StartBtn_Click"/>
+      <Button x:Name="StopBtn" Content="Stop" Width="80" IsEnabled="False" Click="StopBtn_Click"/>
+      <TextBlock x:Name="StatusText" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
+    </StackPanel>
+  </Grid>
 </Page>
