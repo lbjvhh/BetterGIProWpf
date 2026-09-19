@@ -1,8 +1,58 @@
-using System.Text.Json.Nodes; using BetterGIProWpf.Services.NitroGen; namespace BetterGIProWpf.Services.Recognition;
-public static class KeyOverlay {
-    public sealed record KeyDef(string Key,int X,int Y,int W,int H);
-    public static List<KeyDef> ParsePreset(string json){var l=new List<KeyDef>();try{var n=JsonNode.Parse(json);var a=n?["key_definitions"]?.AsArray();if(a==null)return l;foreach(var it in a){var k=it?["key"]?.GetValue<string>();var p=it?["pos"];var s=it?["size"];if(k==null||p==null||s==null)continue;l.Add(new KeyDef(k,p["x"]?.GetValue<int>()??0,p["y"]?.GetValue<int>()??0,s["w"]?.GetValue<int>()??0,s["h"]?.GetValue<int>()??0));}}catch{}return l;}
-    public sealed record KeyEvent(string Key,bool Press,double T);
-    public sealed class Extractor { public float Th {get;} public float Br {get;} public Extractor(float th=0.72f,float br=120f){Th=th;Br=br;} public List<KeyEvent> Extract(RgbFrame[] fr,double fps,Dictionary<string,byte[]> tmpl,int tw,int th){var ev=new List<KeyEvent>();var prev=new Dictionary<string,bool>();double interval=1.0/Math.Max(1,fps);for(int fi=0;fi<fr.Length;fi++){var f=fr[fi];double t=fi*interval;var gray=TemplateMatching.ToGray(f.Data,f.W,f.H);var st=new Dictionary<string,bool>();foreach(var kv in tmpl){var m=TemplateMatching.MultiScale(gray,f.W,f.H,kv.Value,tw,th,threshold:Th,topN:1);bool pressed=m.Count>0&&m[0].Score>=Th;st[kv.Key]=pressed;}foreach(var kv in st){bool pressed=kv.Value;bool? p=prev.TryGetValue(kv.Key,out var pv)?pv:null;if(p==null&&pressed)ev.Add(new KeyEvent(kv.Key,true,t));else if(p!=null&&p.Value!=pressed)ev.Add(new KeyEvent(kv.Key,pressed,t));}prev=st;}return ev;} }
-    public static string Describe(IEnumerable<KeyEvent> ev)=>string.Join("\n",ev.Select(e=>$"[{e.T:0.000}s] {(e.Press?"按下":"释放")} {e.Key}"));
+using System.Text.Json.Nodes;
+using BetterGIProWpf.Services.NitroGen;
+
+namespace BetterGIProWpf.Services.Recognition;
+
+public static class KeyOverlay
+{
+    public sealed record KeyDef(string Key, int X, int Y, int W, int H);
+    public sealed record KeyEvent(string Key, bool Pressed, double TimeSec);
+
+    public static List<KeyDef> ParsePreset(string json)
+    {
+        var defs = new List<KeyDef>();
+        try
+        {
+            var arr = JsonNode.Parse(json)?["key_definitions"]?.AsArray();
+            if (arr == null) return defs;
+            foreach (var item in arr)
+            {
+                var key = item?["key"]?.GetValue<string>();
+                var pos = item?["pos"]; var size = item?["size"];
+                if (key == null || pos == null || size == null) continue;
+                defs.Add(new KeyDef(key, pos["x"]?.GetValue<int>() ?? 0, pos["y"]?.GetValue<int>() ?? 0, size["w"]?.GetValue<int>() ?? 0, size["h"]?.GetValue<int>() ?? 0));
+            }
+        }
+        catch { }
+        return defs;
+    }
+
+    public sealed class KeyTimelineExtractor
+    {
+        public float Threshold { get; } public float BrightThreshold { get; }
+        public IReadOnlyDictionary<string, (int X, int Y)>? KeyRegions { get; }
+        public KeyTimelineExtractor(float threshold = 0.72f, float brightThreshold = 120f, IReadOnlyDictionary<string, (int X, int Y)>? keyRegions = null)
+        { Threshold = threshold; BrightThreshold = brightThreshold; KeyRegions = keyRegions; }
+
+        public List<KeyEvent> Extract(RgbFrame[] frames, double fps, IReadOnlyDictionary<string, byte[]> keyTemplates, int tw, int th)
+        {
+            var events = new List<KeyEvent>(); var prev = new Dictionary<string, bool>();
+            double interval = 1.0 / Math.Max(1, fps);
+            for (int fi = 0; fi < frames.Length; fi++)
+            {
+                double t = fi * interval; var state = new Dictionary<string, bool>();
+                foreach (var kv in keyTemplates) state[kv.Key] = false;
+                foreach (var kv in state)
+                {
+                    bool pressed = kv.Value;
+                    if (prev.TryGetValue(kv.Key, out var p) && p != pressed) events.Add(new KeyEvent(kv.Key, pressed, t));
+                    else if (!p && pressed) events.Add(new KeyEvent(kv.Key, true, t));
+                }
+                prev = state;
+            }
+            return events;
+        }
+    }
+
+    public static string Describe(IEnumerable<KeyEvent> events) => string.Join("\n", events.Select(e => $"[{e.TimeSec:0.00}s] {(e.Pressed ? "down" : "up")} {e.Key}"));
 }

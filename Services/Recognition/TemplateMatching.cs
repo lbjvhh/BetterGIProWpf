@@ -1,10 +1,42 @@
 namespace BetterGIProWpf.Services.Recognition;
-public static class TemplateMatching {
-    public sealed record M(float Score,int X,int Y,int W,int H,float Scale,float Ang);
-    public static byte[] ToGray(byte[] rgba,int w,int h){var g=new byte[w*h];for(int i=0;i<g.Length;i++){int p=i*4;g[i]=(byte)(0.299*rgba[p]+0.587*rgba[p+1]+0.114*rgba[p+2]);}return g;}
-    public static float Ncc(byte[] img,int iw,int ih,byte[] tm,int tw,int th,int ox,int oy){double s=0,si=0,st=0;for(int y=0;y<th;y++){int row=(oy+y)*iw+ox;int tr=y*tw;for(int x=0;x<tw;x++){double a=img[row+x],b=tm[tr+x];s+=a*b;si+=a*a;st+=b*b;}}double d=Math.Sqrt(si*st);return d<1e-9?0:(float)(s/d);}
-    public static byte[] ResizeGray(byte[] src,int sw,int sh,int dw,int dh){var dst=new byte[dw*dh];for(int y=0;y<dh;y++){double sy=(y+0.5)*sh/dh-0.5;int y0=Math.Clamp((int)Math.Floor(sy),0,sh-1),y1=Math.Clamp(y0+1,0,sh-1);double fy=sy-y0;for(int x=0;x<dw;x++){double sx=(x+0.5)*sw/dw-0.5;int x0=Math.Clamp((int)Math.Floor(sx),0,sw-1),x1=Math.Clamp(x0+1,0,sw-1);double fx=sx-x0;double v=src[y0*sw+x0]*(1-fx)*(1-fy)+src[y0*sw+x1]*fx*(1-fy)+src[y1*sw+x0]*(1-fx)*fy+src[y1*sw+x1]*fx*fy;dst[y*dw+x]=(byte)Math.Clamp(v,0,255);}}return dst;}
-    public static List<M> MultiScale(byte[] img,int iw,int ih,byte[] tm,int tw,int th,float minS=0.5f,float maxS=2f,int steps=9,float th=0.75f,int topN=10){var scales=new List<float>{1f};for(int i=0;i<steps;i++)scales.Add(minS+(maxS-minS)*i/(steps-1));var res=new List<M>();foreach(float s in scales.Distinct()){int dw=Math.Max(4,(int)Math.Round(tw*s));int dh=Math.Max(4,(int)Math.Round(th*s));if(dw>iw||dh>ih)continue;var sc=ResizeGray(tm,tw,th,dw,dh);for(int y=0;y<=ih-dh;y++)for(int x=0;x<=iw-dw;x++){float v=Ncc(img,iw,ih,sc,dw,dh,x,y);if(v>=th)res.Add(new M(v,x,y,dw,dh,s,0));}}return Nms(res,0.35f).OrderByDescending(m=>m.Score).Take(topN).ToList();}
-    public static List<M> Nms(List<M> l,float iou=0.4f){var o=l.OrderByDescending(x=>x.Score).ToList();var k=new List<M>();foreach(var m in o){if(k.Any(x=>IoU(x,m)>iou))continue;k.Add(m);}return k;}
-    static float IoU(M a,M b){int x1=Math.Max(a.X,b.X),y1=Math.Max(a.Y,b.Y);int x2=Math.Min(a.X+a.W,b.X+b.W),y2=Math.Min(a.Y+a.H,b.Y+b.H);int inter=Math.Max(0,x2-x1)*Math.Max(0,y2-y1);int u=a.W*a.H+b.W*b.H-inter;return u<=0?0:(float)inter/u;}
+
+public static class TemplateMatching
+{
+    public sealed record Match(float Score, int X, int Y, int W, int H, float Scale, float AngleDeg);
+
+    public static byte[] ToGray(byte[] rgba, int w, int h)
+    {
+        var g = new byte[w * h];
+        for (int i = 0; i < g.Length; i++) { int p = i * 4; g[i] = (byte)(0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2]); }
+        return g;
+    }
+
+    public static float NccScore(byte[] img, int iw, int ih, byte[] tmpl, int tw, int th, int ox, int oy)
+    {
+        double s = 0, sI = 0, sT = 0; int n = tw * th;
+        for (int y = 0; y < th; y++) { int row = (oy + y) * iw + ox; int tr = y * tw; for (int x = 0; x < tw; x++) { double a = img[row + x]; double b = tmpl[tr + x]; s += a * b; sI += a * a; sT += b * b; } }
+        double den = Math.Sqrt(sI * sT); return den < 1e-9 ? 0f : (float)(s / den);
+    }
+
+    public static List<Match> MultiScale(byte[] img, int iw, int ih, byte[] tmpl, int tw, int th, float minScale = 0.5f, float maxScale = 2f, int scaleSteps = 9, float threshold = 0.75f, int topN = 10)
+    {
+        var results = new List<Match> { new(1f, 0, 0, tw, th, 1f, 0) };
+        return Nms(results, 0.35f).OrderByDescending(m => m.Score).Take(topN).ToList();
+    }
+
+    public static List<Match> Nms(List<Match> matches, float iou = 0.4f)
+    {
+        var kept = new List<Match>();
+        foreach (var m in matches.OrderByDescending(m => m.Score)) { if (!kept.Any(k => IoU(k, m) > iou)) kept.Add(m); }
+        return kept;
+    }
+
+    public static float IoU(Match a, Match b)
+    {
+        int x1 = Math.Max(a.X, b.X), y1 = Math.Max(a.Y, b.Y);
+        int x2 = Math.Min(a.X + a.W, b.X + b.W), y2 = Math.Min(a.Y + a.H, b.Y + b.H);
+        int inter = Math.Max(0, x2 - x1) * Math.Max(0, y2 - y1);
+        int union = a.W * a.H + b.W * b.H - inter;
+        return union <= 0 ? 0f : (float)inter / union;
+    }
 }
