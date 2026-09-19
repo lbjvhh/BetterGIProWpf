@@ -1,12 +1,12 @@
 """
 BetterGIProWpf 真实模型推理服务（YOLO / PaddleOCR / Whisper）。
 对外 HTTP 5004：
-  POST /yolo      {image: b64png} -> {boxes:[[x1,y1,x2,y2]], scores:[], classes:[]}
-  POST /ocr       {image: b64png} -> {text:"...", lines:[{text, box, score}]}
-  POST /whisper   {audio: b64wav} -> {text:"...", segments:[{start,end,text}]}
-  POST /ui_set_baseline {image:b64, name} -> {ok, name}
-  POST /ui_diff   {image:b64, threshold} -> {changed, mse}
-  GET  /health    -> {status, models}
+  POST /yolo      {image: b64png} -> {boxes, scores, classes}
+  POST /ocr       {image: b64png} -> {text, lines}
+  POST /whisper   {audio: b64wav} -> {text, segments}
+  POST /equipment_detect {image} -> {count, items, summary}
+  POST /ui_set_baseline /ui_diff
+  GET  /health
 """
 import base64, io, time, json, threading
 import numpy as np
@@ -18,7 +18,7 @@ HTTP_PORT = 5004
 
 _state = {"yolo": None, "ocr_det": None, "ocr_rec": None, "whisper": None, "dict": []}
 _lock = threading.Lock()
-_baseline = {"frame": None, "name": ""}  # P3: UI 变化检测基线帧
+_baseline = {"frame": None, "name": ""}
 
 
 def load_yolo():
@@ -75,7 +75,6 @@ def yolo_infer(img: Image.Image):
 def ocr_infer(img: Image.Image):
     s_det, s_rec = _state["ocr_det"], _state["ocr_rec"]
     img_rgb = img.convert("RGB")
-    w, h = img_rgb.size
     det_in = s_det.get_inputs()[0].name
     det_out = s_det.get_outputs()[0].name
     det_img = img_rgb.resize((960, 960))
@@ -100,11 +99,8 @@ def ocr_infer(img: Image.Image):
     prev = -1
     for i in ids:
         i = int(i)
-        if i == 0:
-            prev = i
-            continue
-        if i == prev:
-            continue
+        if i == 0: prev = i; continue
+        if i == prev: continue
         if 1 <= i <= len(_state["dict"]):
             chars.append(_state["dict"][i - 1])
         prev = i
@@ -154,6 +150,16 @@ class H(BaseHTTPRequestHandler):
                 img = Image.open(io.BytesIO(base64.b64decode(raw["image"]))).convert("RGB")
                 with _lock:
                     self._json(200, yolo_infer(img))
+            elif self.path == "/equipment_detect":
+                img = Image.open(io.BytesIO(base64.b64decode(raw["image"]))).convert("RGB")
+                with _lock:
+                    r = yolo_infer(img)
+                boxes = r.get("boxes", [])
+                scores = r.get("scores", [])
+                classes = r.get("classes", [])
+                good = [(b, s, c) for b, s, c in zip(boxes, scores, classes) if s > 0.5]
+                self._json(200, {"count": len(good), "items": good[:20],
+                                 "summary": f"检测到 {len(good)} 个装备图标"})
             elif self.path == "/ocr":
                 img = Image.open(io.BytesIO(base64.b64decode(raw["image"]))).convert("RGB")
                 with _lock:
