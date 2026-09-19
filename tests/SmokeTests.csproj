@@ -11,6 +11,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="NewModuleTests.cs" />
     <Compile Include="..\Services\**\*.cs" />
+    <Compile Include="..\AppState.cs" />
+    <Compile Include="..\AppConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
