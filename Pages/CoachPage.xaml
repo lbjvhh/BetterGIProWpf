@@ -8,7 +8,9 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+
         <TextBlock Text="实时策略教练 · 视频对照" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+
         <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
                 BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,12,0,12">
             <StackPanel>
@@ -26,12 +28,13 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <Button Content="▶ 模拟一次对比分析" Width="150" Click="Analyze_Click"/>
+                    <Button Content="⚡ 实时分析(当前OCR)" Width="160" Margin="8,0,0,0" Click="LiveAnalyze_Click"/>
                     <CheckBox x:Name="VoiceChk" Content="语音播报建议" IsChecked="True" Margin="16,0,0,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="  建议类型：元素反应 / 体力管理 / 路线优化 / 技能时机 / 敌人弱点（≥5 种）"
-                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <TextBlock x:Name="LiveOcrStatus" Text="" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
             </StackPanel>
         </Border>
+
         <Border Grid.Row="2" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8">
             <TextBox x:Name="CoachLog" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
                      Background="White" BorderThickness="0" Padding="10" VerticalScrollBarVisibility="Auto"/>

@@ -14,11 +14,6 @@ namespace BetterGIProWpf.Services.Recognition;
 
 /// <summary>
 /// 持续视频识别器（2 FPS = 每 500ms 一帧，每秒识别两次）。
-/// - 每 500ms 抓一帧 WebView2 视频画面
-/// - 调 vision_server 5004 做 PaddleOCR 识别
-/// - OCR 文本 + 画面差异 → 规则生成操作步骤
-/// - 步骤实时追加到本地脚本文件（BetterGI AutoFight TXT + ScriptGroup manifest/main.js）
-/// - 停止时输出脚本路径，并触发 GitHub 上传（由调用方注入 uploader 回调）
 /// </summary>
 public sealed class ContinuousRecognizer : IDisposable
 {
@@ -157,6 +152,14 @@ public sealed class ContinuousRecognizer : IDisposable
                 }
             }
             catch { }
+
+            // P1-2/9：写入全局最新 OCR 文本，供教练/问答页实时读取
+            if (!string.IsNullOrWhiteSpace(ocrText))
+            {
+                AppState.LastOcrText = ocrText;
+                AppState.LastRecognitionAt = DateTime.Now;
+            }
+
             var rule = OcrToAction ?? DefaultOcrToAction;
             var (action, target) = rule(ocrText);
             if (!string.IsNullOrWhiteSpace(ocrText) && action != "unknown")
