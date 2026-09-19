@@ -1,1 +1,53 @@
-<Page x:Class="BetterGIProWpf.Pages.CompanionPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"><Grid Margin="24"><TextBlock Text="Companion" FontSize="20"/></Grid></Page>
+<Page x:Class="BetterGIProWpf.Pages.CompanionPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{DynamicResource BgMain}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="AI 游戏队友 · 协作模式" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+
+        <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
+                BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,12,0,12">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="执行轨" Width="60" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="ExecModeCombo" Width="160" SelectedIndex="0">
+                        <ComboBoxItem Content="主轨·脚本注入" Tag="script"/>
+                        <ComboBoxItem Content="辅轨·NitroGen" Tag="nitrogen"/>
+                    </ComboBox>
+                    <TextBlock Text="行为模式" Width="80" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <ComboBox x:Name="ModeCombo" Width="200" SelectedIndex="0">
+                        <ComboBoxItem Content="跟随模式（跟玩家）" Tag="follow"/>
+                        <ComboBoxItem Content="自主模式（独立行动）" Tag="autonomous"/>
+                    </ComboBox>
+                    <TextBlock Text="  成功率" Width="70" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}"/>
+                    <TextBlock x:Name="RateLabel" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="文字指令" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="CmdBox" Width="340" VerticalContentAlignment="Center" ToolTip="例如：帮我打这个怪 / 去风起地 / 采集水晶块 / 跟随我"/>
+                    <Button Content="发送" Width="70" Margin="8,0,0,0" Click="SendCmd_Click"/>
+                    <Button x:Name="TakeoverBtn" Content="⚑ 热键接管" Width="90" Margin="8,0,0,0" Click="Takeover_Click"/>
+                    <Button Content="🎤 语音指令" Width="110" Margin="8,0,0,0" Click="VoiceDemo_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="状态问答" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="QaBox" Width="340" VerticalContentAlignment="Center" ToolTip="例如：我现在在哪？这个宝箱开了吗？"/>
+                    <Button Content="提问" Width="70" Margin="8,0,0,0" Click="AskQa_Click"/>
+                    <TextBlock x:Name="QaStatus" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
+                </StackPanel>
+                <TextBlock Text="说明：语音识别（<500ms）与 TTS 需在 AI 设置中配置本地 ASR/TTS 端点；热键接管后 AI 队友立即停止当前动作并切换为跟随。" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" FontSize="12" Margin="0,10,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8">
+            <TextBox x:Name="CompanionLog" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
+                     Background="White" BorderThickness="0" Padding="10" VerticalScrollBarVisibility="Auto"/>
+        </Border>
+    </Grid>
+</Page>
