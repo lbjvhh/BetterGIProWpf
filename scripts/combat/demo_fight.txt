@@ -1,0 +1,10 @@
+# 示例战斗脚本（P0-2 云端种子）
+# 指令集：walk/back/left/right/attack/skill/burst/dash/jump/interact/map/wait
+walk 2
+attack 3
+skill e
+burst q
+dash 1
+jump 1
+wait 300
+interact 1

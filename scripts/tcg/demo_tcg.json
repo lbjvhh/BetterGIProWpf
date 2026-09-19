@@ -1,0 +1,9 @@
+{
+  "name": "demo_tcg",
+  "author": "seed",
+  "game_version": "5.0",
+  "strategy": [
+    { "phase": "开局", "action": "更换出战角色" },
+    { "phase": "中盘", "action": "保留骰子等待关键卡牌" }
+  ]
+}

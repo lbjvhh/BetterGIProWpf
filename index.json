@@ -1,0 +1,39 @@
+{
+  "repo": "BetterGIProWpf-scripts",
+  "version": 1,
+  "scripts": [
+    {
+      "name": "demo_fight",
+      "author": "seed",
+      "game_version": "5.0",
+      "tags": ["战斗", "示例"],
+      "category": "combat",
+      "path": "scripts/combat/demo_fight.txt",
+      "version": 1,
+      "avg_rating": 0,
+      "rating_count": 0
+    },
+    {
+      "name": "windrise",
+      "author": "seed",
+      "game_version": "5.0",
+      "tags": ["采集", "蒙德"],
+      "category": "pathing",
+      "path": "scripts/pathing/windrise.json",
+      "version": 1,
+      "avg_rating": 0,
+      "rating_count": 0
+    },
+    {
+      "name": "demo_collect",
+      "author": "seed",
+      "game_version": "5.0",
+      "tags": ["JS", "示例"],
+      "category": "js",
+      "path": "scripts/js/demo_collect/main.js",
+      "version": 1,
+      "avg_rating": 0,
+      "rating_count": 0
+    }
+  ]
+}
