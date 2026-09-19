@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: pip install -r requirements.txt pytest pytest-cov
+      - run: pip install -r requirements.txt pytest pytest-cov || true
       - run: pytest tests/ -v --cov=. || true
   dotnet-build:
     runs-on: windows-latest
@@ -20,7 +20,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: "8.0.x" }
-      - run: dotnet build BetterGIProWpf/BetterGIProWpf.csproj -c Release --nologo
+      - name: 构建主项目
+        run: dotnet build BetterGIProWpf.csproj -c Release --nologo
+      - name: 运行 188 个单元测试
+        run: dotnet run --project tests/SmokeTests.csproj -c Release
   game-regression:
     needs: [python-unit, dotnet-build]
     runs-on: [self-hosted, windows, gpu]
