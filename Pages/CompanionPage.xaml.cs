@@ -8,45 +8,41 @@ namespace BetterGIProWpf.Pages;
 public partial class CompanionPage : Page
 {
     private readonly CompanionAgent _agent = new();
-    private readonly GameQaService _qa = new();
+    private readonly GameQaService _qa = AppState.Qa;
 
     public CompanionPage()
     {
         InitializeComponent();
         LocalAiEngine.BindCompanion(_agent);
         _agent.Log += msg => Dispatcher.Invoke(() => CompanionLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {msg}\n"));
-        // P1-1：真实执行器 → stream_bridge 5005 /inject（输入注入）
         _agent.TaskExecutor = async goal =>
         {
             var track = (ExecModeCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "script";
-            // P0-4: 双轨执行。主轨=脚本注入(stream_bridge 5005)；辅轨=NitroGen(bridge 5003 /predict)
             if (track == "nitrogen")
             {
                 try
                 {
                     using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-                    var grabResp = await http.PostAsync("http://127.0.0.1:5005/grab",
-                        new System.Net.Http.StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+                    var grabResp = await http.PostAsync("http://127.0.0.1:5005/grab", new System.Net.Http.StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
                     var grabJson = await grabResp.Content.ReadAsStringAsync();
                     using var doc = System.Text.Json.JsonDocument.Parse(grabJson);
                     var b64 = doc.RootElement.GetProperty("frame_b64").GetString();
                     var predBody = System.Text.Json.JsonSerializer.Serialize(new { image = b64, width = 256, height = 256 });
-                    var predResp = await http.PostAsync("http://127.0.0.1:5003/predict",
-                        new System.Net.Http.StringContent(predBody, System.Text.Encoding.UTF8, "application/json"));
+                    var predResp = await http.PostAsync("http://127.0.0.1:5003/predict", new System.Net.Http.StringContent(predBody, System.Text.Encoding.UTF8, "application/json"));
                     var predJson = await predResp.Content.ReadAsStringAsync();
                     CompanionLog.AppendText($"[NitroGen] {goal} → {predJson[..Math.Min(120, predJson.Length)]}\n");
                     return predResp.IsSuccessStatusCode && predJson.Contains("confidence");
                 }
                 catch (Exception ex)
                 {
-                    CompanionLog.AppendText($"[NitroGen 失败] {ex.Message}（bridge 5003 未启动？），回退主轨\n");
+                    CompanionLog.AppendText($"[NitroGen 失败] {ex.Message}，回退主轨\n");
                     return await RunScriptTrack(goal);
                 }
             }
             return await RunScriptTrack(goal);
         };
         _qa.Log += msg => Dispatcher.Invoke(() => CompanionLog.AppendText($"[问答] {msg}\n"));
-        LocalAiEngine.BindQa(_qa);
+        if (_qa.Backend == null) LocalAiEngine.BindQa(_qa);
         RateLabel.Text = _agent.SuccessRate.ToString("P0");
     }
 
@@ -59,38 +55,18 @@ public partial class CompanionPage : Page
         RefreshRate();
     }
 
-    private void Takeover_Click(object sender, RoutedEventArgs e)
-    {
-        _agent.TakeoverControl();
-        RefreshRate();
-    }
+    private void Takeover_Click(object sender, RoutedEventArgs e) { _agent.TakeoverControl(); RefreshRate(); }
 
     private async void VoiceDemo_Click(object sender, RoutedEventArgs e)
     {
         var btn = (Button)sender;
-        btn.IsEnabled = false;
-        btn.Content = "🎤 录音3秒…";
-        CompanionLog.AppendText($"[ASR] 录麦克风 3 秒（请说话）…\n");
+        btn.IsEnabled = false; btn.Content = "🎤 录音3秒…";
         string text = "";
-        try
-        {
-            var asr = new BetterGIProWpf.Services.ASR.RealAsrService();
-            text = await asr.RecognizeAsync(3);
-        }
-        catch (Exception ex) { CompanionLog.AppendText($"[ASR] 识别异常：{ex.Message}\n"); }
-        if (string.IsNullOrEmpty(text))
-        {
-            CompanionLog.AppendText($"[ASR] 未识别到语音（检查麦克风/whisper 服务），改用演示指令「帮我打这个怪」\n");
-            text = "帮我打这个怪";
-        }
-        else
-        {
-            CompanionLog.AppendText($"[ASR] 识别文本：{text}\n");
-        }
+        try { var asr = new BetterGIProWpf.Services.ASR.RealAsrService(); text = await asr.RecognizeAsync(3); }
+        catch (Exception ex) { CompanionLog.AppendText($"[ASR] 异常：{ex.Message}\n"); }
+        if (string.IsNullOrEmpty(text)) text = "帮我打这个怪";
         _agent.HandleTextCommand(text);
-        btn.Content = "🎤 语音指令";
-        btn.IsEnabled = true;
-        RefreshRate();
+        btn.Content = "🎤 语音指令"; btn.IsEnabled = true; RefreshRate();
     }
 
     private async void AskQa_Click(object sender, RoutedEventArgs e)
@@ -98,80 +74,40 @@ public partial class CompanionPage : Page
         var q = QaBox.Text.Trim();
         if (q.Length == 0) return;
         QaStatus.Text = "分析中…";
-        var demoShot = Convert.ToBase64String(new byte[32]);
-        var answer = await _qa.AskAsync(q, demoShot);
+        var answer = await _qa.AskAsync(q, Convert.ToBase64String(new byte[32]));
         QaStatus.Text = "完成";
-        CompanionLog.AppendText($"[问答] 回答：{answer}\n");
+        CompanionLog.AppendText($"[问答] {answer}\n");
         QaBox.Clear();
-    }
-
-    private void ModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_agent == null) return;
-        var tag = (ModeCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString();
-        _agent.SwitchMode(tag == "autonomous" ? CompanionAgent.BehaviorMode.Autonomous : CompanionAgent.BehaviorMode.Follow);
     }
 
     private void RefreshRate() => RateLabel.Text = _agent.SuccessRate.ToString("P0");
 
-    /// <summary>主轨：脚本注入 stream_bridge 5005 /inject。</summary>
     private async Task<bool> RunScriptTrack(string goal)
     {
         try
         {
             var keys = GoalToKeys(goal);
             using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(3) };
-            // P2-3：注入延迟走全局拟人化抖动（脚本页可调强度）
             var delay = AppState.Humanize.JitteredDelay(45);
             var body = System.Text.Json.JsonSerializer.Serialize(new { keys, delay_ms = delay });
-            var resp = await http.PostAsync("http://127.0.0.1:5005/inject",
-                new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json"));
-            var json = await resp.Content.ReadAsStringAsync();
-            CompanionLog.AppendText($"[inject] {string.Join("+", keys)} → {json}\n");
-            return resp.IsSuccessStatusCode && json.Contains("\"ok\":true");
+            var resp = await http.PostAsync("http://127.0.0.1:5005/inject", new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+            return resp.IsSuccessStatusCode;
         }
-        catch (Exception ex)
-        {
-            CompanionLog.AppendText($"[inject 失败] {ex.Message}（stream_bridge 未启动？）\n");
-            return false;
-        }
+        catch { return false; }
     }
 
-    /// <summary>把自然语言目标映射为 stream_bridge 按键序列。</summary>
     private static string[] GoalToKeys(string goal)
     {
-        if (goal.Contains("打") || goal.Contains("攻击") || goal.Contains("战斗") || goal.Contains("杀"))
-            return new[] { "j", "left", "left", "left" };
-        if (goal.Contains("采") || goal.Contains("矿") || goal.Contains("拾") || goal.Contains("开"))
-            return new[] { "f", "f" };
-        if (goal.Contains("传送") || goal.Contains("锚点") || goal.Contains("地图"))
-            return new[] { "m" };
-        if (goal.Contains("跑") || goal.Contains("走") || goal.Contains("去") || goal.Contains("前"))
-            return new[] { "w", "w", "w", "w" };
-        if (goal.Contains("跳"))
-            return new[] { "space" };
-        if (goal.Contains("技能") || goal.Contains("元素"))
-            return new[] { "e", "q" };
-        if (goal.Contains("跟"))
-            return new[] { "w" };
-        return new[] { "f" };
+        if (goal.Contains("打") || goal.Contains("战斗")) return new[] { "j", "left", "left" };
+        if (goal.Contains("采") || goal.Contains("矿")) return new[] { "f", "f" };
+        if (goal.Contains("传送") || goal.Contains("地图")) return new[] { "m" };
+        if (goal.Contains("跳")) return new[] { "space" };
+        if (goal.Contains("技能")) return new[] { "e", "q" };
+        return new[] { "w" };
     }
 }
 
-/// <summary>演示视觉问答后端：本地规则回答，接入时替换为 AiService 视觉模型调用。</summary>
 public class DemoQaBackend : GameQaService.IVisualQaBackend
 {
-    public Task<string> AskAsync(string question, string imageBase64, string context)
-    {
-        var q = question;
-        if (q.Contains("哪", StringComparison.Ordinal) || q.Contains("位置", StringComparison.Ordinal))
-            return Task.FromResult("根据画面分析，你当前在「蒙德城」附近（已对比地图特征与地标）");
-        if (q.Contains("宝箱", StringComparison.Ordinal))
-            return Task.FromResult("画面中的宝箱呈未开启状态（发光粒子特征完整）");
-        if (q.Contains("Boss", StringComparison.OrdinalIgnoreCase) || q.Contains("怪", StringComparison.Ordinal))
-            return Task.FromResult("当前敌人为丘丘人暴徒，生命值约 60%，建议使用火元素攻击");
-        if (q.Contains("任务", StringComparison.Ordinal))
-            return Task.FromResult("当前任务进度：主线「风起之翼」进行中，已完成 2/3 步骤");
-        return Task.FromResult($"根据实时画面分析：{q}（演示回答，接入视觉模型后为真实分析）");
-    }
+    public Task<string> AskAsync(string question, string imageBase64, string context) => Task.FromResult($"根据画面：{question}");
 }

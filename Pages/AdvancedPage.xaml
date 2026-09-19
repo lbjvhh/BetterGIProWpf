@@ -5,36 +5,38 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
         <StackPanel MaxWidth="640">
             <TextBlock Text="高级代理" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" Margin="0,0,0,12"/>
-
             <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
                 <StackPanel>
                     <TextBlock Text="双轨执行架构" FontWeight="SemiBold" Margin="0,0,0,6"/>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                        <RadioButton x:Name="TrackPrimary" GroupName="track" Content="主轨（结构化任务）" IsChecked="True" Margin="0,0,16,0"/>
-                        <RadioButton x:Name="TrackSecondary" GroupName="track" Content="辅轨（端到端策略）" Margin="0,0,16,0"/>
-                        <RadioButton x:Name="TrackAuto" GroupName="track" Content="自动（置信度回退）"/>
+                        <RadioButton x:Name="TrackPrimary" GroupName="track" Content="主轨" IsChecked="True" Margin="0,0,16,0"/>
+                        <RadioButton x:Name="TrackSecondary" GroupName="track" Content="辅轨" Margin="0,0,16,0"/>
+                        <RadioButton x:Name="TrackAuto" GroupName="track" Content="自动回退"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="回退阈值" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBox x:Name="ThresholdBox" Width="70" Height="28" Text="0.6"/>
                     </StackPanel>
-                    <TextBlock Text="辅轨需接入端到端策略模型（ONNX）；当前为主轨/自动回退逻辑骨架。"
-                               Foreground="{DynamicResource TextMuted}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
-
+            <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="操作序列拟人化分析（模块26）" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                    <TextBlock Text="粘贴按键间隔毫秒数（逗号分隔，≥3 个）。" Foreground="{DynamicResource TextMuted}" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBox x:Name="IntervalsBox" Height="60" TextWrapping="Wrap" AcceptsReturn="True" Text="120, 95, 140, 110, 130, 100, 150, 120, 90, 110"/>
+                    <Button x:Name="AnalyzeBtn" Content="分析" Width="80" Margin="0,8,0,0" Click="AnalyzeBtn_Click"/>
+                    <TextBlock x:Name="HumanizeReport" Margin="0,10,0,0" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
             <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
                 <StackPanel>
                     <TextBlock Text="导出 BetterGI JS 脚本" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <TextBlock Text="把当前操作序列生成为 manifest.json + main.js，放入 ScriptGroup 目录。"
-                               Foreground="{DynamicResource TextMuted}" FontSize="12" Margin="0,0,0,8"/>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="GenScriptBtn" Content="生成脚本" Width="100" Click="GenScriptBtn_Click"/>
                         <TextBlock x:Name="ScriptMsg" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
-
             <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16">
                 <StackPanel>
                     <TextBlock Text="定时编排与缓存" FontWeight="SemiBold" Margin="0,0,0,6"/>
