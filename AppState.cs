@@ -13,10 +13,7 @@ public static class AppState
     public static string LastVideoOcrText { get; set; } = "";
     public static DateTime LastRecognitionAt { get; set; } = DateTime.MinValue;
     public static string LastStepsJson { get; set; } = "[]";
-
-    /// <summary>全局 HTTP 客户端单例。</summary>
-    public static System.Net.Http.HttpClient Http { get; } = new() { Timeout = TimeSpan.FromSeconds(5) };
-
+    public static System.Net.Http.HttpClient Http { get; } = new() { Timeout = TimeSpan.FromSeconds(30) };
     public static Services.Humanize.HumanizeInput Humanize { get; } = new();
     public static AiService Ai { get; private set; } = new(AppConfig.Ai);
     public static GameQaService Qa { get; } = new();
