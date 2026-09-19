@@ -34,6 +34,7 @@
                     <TextBlock Text="UI检测" Width="90" VerticalAlignment="Center"/>
                     <Button Content="📐 设基线" Width="100" Click="UiBaseline_Click"/>
                     <Button Content="🔍 对比变化" Width="100" Margin="8,0,0,0" Click="UiDiff_Click"/>
+                    <Button Content="📐 自动适配坐标" Width="120" Margin="8,0,0,0" Click="AutoAdapt_Click"/>
                     <TextBlock x:Name="UiDiffStatus" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -47,6 +48,7 @@
                     <Button Content="🎵 音频场景(1s采样)" Width="150" Click="AudioScene_Click" ToolTip="NAudio 采样 1 秒 → CPU 特征 → 战斗/探索/对话/菜单/加载分类"/>
                     <Button Content="🔫 YOLO检测帧" Width="120" Margin="8,0,0,0" Click="YoloDetect_Click" ToolTip="抓当前帧 → vision_server /yolo 目标检测"/>
                     <Button Content="🏷 装备检测" Width="100" Margin="8,0,0,0" Click="EquipDetect_Click" ToolTip="抓当前帧 → vision_server /equipment_detect（YOLO 图标计数）"/>
+                    <Button Content="⛩ 原神检测" Width="100" Margin="8,0,0,0" Click="GenshinDetect_Click" ToolTip="抓当前帧 → vision_server /genshin_detect（原神专属 YOLO + OCR 关键词 → 元素/场景）"/>
                     <TextBlock x:Name="SceneStatus" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
