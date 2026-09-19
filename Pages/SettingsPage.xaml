@@ -3,15 +3,52 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       Background="{DynamicResource BgMain}">
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
-        <StackPanel MaxWidth="600">
+        <StackPanel MaxWidth="720">
             <TextBlock Text="设置" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" Margin="0,0,0,12"/>
+
+            <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,8">
+                        <TextBlock Text="外接 AI 模型" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" DockPanel.Dock="Left"/>
+                        <CheckBox x:Name="ChkUseExternal" Content="启用外部模型" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <TextBlock Text="OpenAI 兼容接口（Chat Completions），支持 GPT-4o / Qwen-VL / DeepSeek / 本地 Ollama 等。"
+                               Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,12" FontSize="12"/>
+
+                    <TextBlock Text="Provider" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="CmbProvider" Margin="0,0,0,8" SelectedIndex="0">
+                        <ComboBoxItem Content="OpenAI" Tag="openai"/>
+                        <ComboBoxItem Content="Azure OpenAI" Tag="azure"/>
+                        <ComboBoxItem Content="DeepSeek" Tag="deepseek"/>
+                        <ComboBoxItem Content="Qwen (DashScope)" Tag="qwen"/>
+                        <ComboBoxItem Content="本地 Ollama" Tag="ollama"/>
+                        <ComboBoxItem Content="自定义" Tag="custom"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Base URL" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4"/>
+                    <TextBox x:Name="TxtBaseUrl" Margin="0,0,0,8" Text="https://api.openai.com/v1"/>
+
+                    <TextBlock Text="API Key" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4"/>
+                    <PasswordBox x:Name="TxtApiKey" Margin="0,0,0,8"/>
+
+                    <TextBlock Text="模型名（如 gpt-4o / qwen-vl-max / deepseek-chat / qwen2.5:7b）" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4"/>
+                    <TextBox x:Name="TxtModel" Margin="0,0,0,12" Text="gpt-4o"/>
+
+                    <DockPanel Margin="0,0,0,8">
+                        <Button x:Name="BtnSave" Content="保存配置" Padding="16,6" DockPanel.Dock="Left" Click="BtnSave_Click"/>
+                        <Button x:Name="BtnTest" Content="测试连接" Padding="16,6" Margin="8,0,0,0" Click="BtnTest_Click"/>
+                    </DockPanel>
+                    <TextBlock x:Name="LblStatus" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Text="配置保存到 %APPDATA%\BetterGIProWpf\config.json"/>
+                </StackPanel>
+            </Border>
+
             <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16">
                 <StackPanel>
                     <TextBlock Text="BetterGI Pro · WPF 版" FontWeight="SemiBold"/>
                     <TextBlock Text="技术栈：.NET 8 / WPF / WebView2" Foreground="{DynamicResource TextMuted}" Margin="0,4,0,0"/>
-                    <TextBlock Text="· 内置攻略浏览器（WebView2 + 逐帧截图 + 视觉 AI）" Foreground="{DynamicResource TextMuted}"/>
-                    <TextBlock Text="· 游戏自动启动（注册表探测 + 窗口定位）" Foreground="{DynamicResource TextMuted}"/>
-                    <TextBlock Text="· AI 多模态视觉服务" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,12"/>
+                    <TextBlock Text="· 内置攻略浏览器（WebView2 + 逐帧截图 + 视觉 AI）" Foreground="{DynamicResource TextMuted}" Margin="0,8,0,0"/>
+                    <TextBlock Text="· NitroGen / YOLO / PaddleOCR / faster-whisper 本地推理" Foreground="{DynamicResource TextMuted}"/>
+                    <TextBlock Text="· 外接模型：游戏问答、命令解析、策略教练、规则抽取" Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
             </Border>
         </StackPanel>

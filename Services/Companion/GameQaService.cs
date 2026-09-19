@@ -21,7 +21,9 @@ public class GameQaService
         if (Backend == null) { Log?.Invoke("未配置视觉问答后端"); return "未配置视觉问答后端"; }
         var context = BuildContext();
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        var answer = await Backend.AskAsync(question, imageBase64, context);
+        string answer;
+        try { answer = await Backend.AskAsync(question, imageBase64, context); }
+        catch (Exception ex) { answer = "（调用外部模型失败）" + ex.Message; }
         sw.Stop();
         lock (_lock)
         {
@@ -51,4 +53,16 @@ public class GameQaService
 
     public IReadOnlyList<(DateTime T, string Role, string Text)> History { get { lock (_lock) return _history.ToArray(); } }
     public int TurnCount { get { lock (_lock) return _history.Count / 2; } }
+}
+
+public sealed class OpenAiVisionBackend : GameQaService.IVisualQaBackend
+{
+    private readonly AiService _ai;
+    public OpenAiVisionBackend(AiService ai) { _ai = ai; }
+
+    public async Task<string> AskAsync(string question, string imageBase64, string context)
+    {
+        var sys = "你是原神/通用游戏的实时视觉助手。基于用户提供的最新游戏画面和对话历史，用中文简洁回答。回答控制在 60 字以内。\n对话历史：\n" + context;
+        return await _ai.ChatAsync(sys, question);
+    }
 }
