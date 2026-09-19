@@ -1,0 +1,10 @@
+# BetterGI AutoFight 持续识别脚本（2 FPS · 2026-09-19 15:50:00）
+# 间隔 500ms 自动抓帧 + OCR → 操作
+# 指令集: attack/skill/burst/charge/sprint/jump/walk/interact/wait;时长[;参数]
+teleport;0.5;传送锚点 风起地
+walk;0.5;移动 沿草地前进
+interact;0.5;采集 水晶块
+walk;0.5;移动 继续前进
+combat;0.5;战斗 打倒史莱姆
+interact;0.5;对话 NPC 任务对话
+# end · steps=6 · frames=12 · dur=6.0s
