@@ -1,6 +1,5 @@
 namespace BetterGIProWpf.Services.Automation;
 
-/// <summary>轻量 5 字段 cron 解析器（分 时 日 月 周），支持 * / , - 与数字。</summary>
 public class CronExpression
 {
     private readonly int[] _min = new int[60];
@@ -15,8 +14,7 @@ public class CronExpression
     {
         Raw = expr;
         var fields = expr.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (fields.Length != 5)
-            throw new FormatException($"cron 表达式需 5 段（分 时 日 月 周），实际 {fields.Length} 段: {expr}");
+        if (fields.Length != 5) throw new FormatException($"cron 需 5 段，实际 {fields.Length}: {expr}");
         Parse(fields[0], _min, 0, 59, "分");
         Parse(fields[1], _hour, 0, 23, "时");
         Parse(fields[2], _day, 1, 31, "日");
@@ -28,10 +26,9 @@ public class CronExpression
     {
         foreach (var seg in field.Split(','))
         {
-            var seg_ = seg.Trim();
-            var slash = seg_.Split('/');
+            var slash = seg.Trim().Split('/');
             var step = slash.Length > 1 ? int.Parse(slash[1]) : 1;
-            if (step <= 0) throw new FormatException($"{name} 步长必须 &gt; 0: {field}");
+            if (step <= 0) throw new FormatException($"{name} 步长必须 > 0");
             var range = slash[0] == "*" ? $"{min}-{max}" : slash[0];
             var dash = range.Split('-');
             var from = int.Parse(dash[0]);
@@ -41,11 +38,9 @@ public class CronExpression
         }
     }
 
-    /// <summary>计算 from 之后的下一触发时间（精确到分钟）。</summary>
     public DateTime Next(DateTime from)
     {
         var t = new DateTime(from.Year, from.Month, from.Day, from.Hour, from.Minute, 0).AddMinutes(1);
-        // 上限 6 年（分钟级遍历），足够覆盖任意 5 段 cron
         var maxIterations = 366 * 6 * 24 * 60;
         for (var i = 0; i < maxIterations; i++)
         {
@@ -54,6 +49,6 @@ public class CronExpression
                 return t;
             t = t.AddMinutes(1);
         }
-        throw new InvalidOperationException("6 年内找不到匹配时间: " + Raw);
+        throw new InvalidOperationException("6 年内找不到匹配: " + Raw);
     }
 }

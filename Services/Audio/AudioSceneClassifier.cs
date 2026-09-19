@@ -1,21 +1,14 @@
 namespace BetterGIProWpf.Services.Audio;
 
-/// <summary>场景音乐类型（模块17 要求 ≥6 种）。</summary>
 public enum SceneMusicType { Combat, Exploration, Town, Dialogue, Menu, Loading }
 
-/// <summary>
-/// 游戏音乐/音效识别与场景匹配（模块17）：CPU 推理（纯特征计算，不占 GPU），
-/// 基于短时能量/过零率/频谱质心的启发式分类；与视觉识别融合输出综合状态。
-/// </summary>
 public class AudioSceneClassifier
 {
-    /// <summary>一帧音频特征（16kHz 单声道 50ms 窗口）。</summary>
     public record AudioFrame(double Rms, double ZeroCrossingRate, double SpectralCentroid);
 
     public double RecognitionLatencyMs { get; private set; }
     public event Action<SceneMusicType>? SceneDetected;
 
-    /// <summary>从 PCM16 采样计算特征。</summary>
     public static AudioFrame Extract(byte[] pcm16)
     {
         var n = pcm16.Length / 2;
@@ -29,7 +22,6 @@ public class AudioSceneClassifier
             prev = s;
         }
         var rms = Math.Sqrt(sum2 / n);
-        // 简单频谱质心：帧内相邻差分绝对值作为高频代理
         for (var i = 1; i < n; i++)
         {
             var d = Math.Abs(BitConverter.ToInt16(pcm16, i * 2) / 32768d - BitConverter.ToInt16(pcm16, (i - 1) * 2) / 32768d);
@@ -38,8 +30,6 @@ public class AudioSceneClassifier
         return new AudioFrame(rms, zcr / n, n < 2 ? 0 : magSum / (n - 1));
     }
 
-    /// <summary>分类：战斗（高能量高过零）、加载（极低能量）、菜单（中低能量低质心）、
-    /// 对话（中能量）、城镇/探索（环境音乐中能量）。</summary>
     public SceneMusicType Classify(AudioFrame f)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -56,7 +46,6 @@ public class AudioSceneClassifier
         return type;
     }
 
-    /// <summary>视觉+音频融合判定（误判率目标 &lt;5%）。</summary>
     public static string Fuse(SceneMusicType audio, string visualState)
     {
         if (audio == SceneMusicType.Loading) return "加载中";

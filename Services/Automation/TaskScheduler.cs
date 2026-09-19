@@ -1,12 +1,10 @@
 namespace BetterGIProWpf.Services.Automation;
 
-/// <summary>定时任务：cron 表达式 + 动作 + 可选睡眠/唤醒。</summary>
 public class ScheduledTask
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
     public string Name { get; set; } = "未命名任务";
     public string Cron { get; set; } = "0 3 * * *";
-    /// <summary>action: parse-video | run-tasks | system-sleep | system-wake</summary>
     public string Action { get; set; } = "run-tasks";
     public bool Enabled { get; set; } = true;
     public DateTime? NextRun { get; set; }
@@ -18,7 +16,6 @@ public class ScheduledTask
     }
 }
 
-/// <summary>定时编排调度器：维护多组互不干扰的定时任务，到点触发回调。</summary>
 public class TaskScheduler : IDisposable
 {
     private readonly List<ScheduledTask> _tasks = new();
@@ -39,7 +36,6 @@ public class TaskScheduler : IDisposable
     }
 
     public void Remove(string id) { lock (_lock) _tasks.RemoveAll(x => x.Id == id); }
-
     public List<ScheduledTask> Snapshot() { lock (_lock) return _tasks.ToList(); }
 
     private async Task LoopAsync()
@@ -54,11 +50,7 @@ public class TaskScheduler : IDisposable
                 foreach (var t in _tasks)
                 {
                     if (!t.Enabled || t.NextRun == null) continue;
-                    if (t.NextRun <= now)
-                    {
-                        due.Add(t);
-                        t.NextRun = t.ComputeNext(now);
-                    }
+                    if (t.NextRun <= now) { due.Add(t); t.NextRun = t.ComputeNext(now); }
                 }
             }
             foreach (var t in due) TaskTriggered?.Invoke(t);
