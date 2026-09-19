@@ -1,1 +1,56 @@
-<Page x:Class="BetterGIProWpf.Pages.ScriptsPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"><Grid Margin="24"><TextBlock Text="Scripts" FontSize="20"/></Grid></Page>
+<Page x:Class="BetterGIProWpf.Pages.ScriptsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{DynamicResource BgMain}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="本地脚本 · 自适应执行 · 卡死/网络/UI/拟人化" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+
+        <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
+                BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,12,0,12">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="脚本目录" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="UserRootBox" Width="340" VerticalContentAlignment="Center"
+                             Text="C:\BetterGI\User" ToolTip="BetterGI 的 User 目录（JsScript/AutoPathing/AutoFight/AutoGeniusInvokation/KeyMouseScript/ScriptGroup）"/>
+                    <Button Content="扫描" Width="60" Margin="8,0,0,0" Click="Scan_Click"/>
+                    <Button Content="真实执行(经bridge)" Width="140" Margin="8,0,0,0" Click="BridgeRun_Click" ToolTip="解析 AutoFight 战斗脚本 → stream_bridge /inject 真实按键注入"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="异常自适应" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="AnomalyBox" Width="280" VerticalContentAlignment="Center" Text="getPositionFromMap 返回 null" ToolTip="输入日志行，自动检测异常类型并尝试修复"/>
+                    <Button Content="检测+修复" Width="100" Margin="8,0,0,0" Click="FixAnomaly_Click"/>
+                    <Button Content="卡死检测" Width="90" Margin="8,0,0,0" Click="Stuck_Click"/>
+                    <Button Content="帧差卡死(实时)" Width="130" Margin="8,0,0,0" Click="FrameStuck_Click" ToolTip="从 /grab 抓连续帧算帧差 → 卡死检测 → 自动注入脱离按键"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="脚本仓库" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="RepoSearchBox" Width="200" VerticalContentAlignment="Center" ToolTip="按名称/关键词搜索仓库脚本（js/pathing/combat/tcg）"/>
+                    <Button Content="刷新仓库" Width="90" Margin="8,0,0,0" Click="RepoRefresh_Click"/>
+                    <Button Content="搜索" Width="70" Margin="8,0,0,0" Click="RepoSearch_Click"/>
+                    <Button Content="订阅首个" Width="90" Margin="8,0,0,0" Click="RepoSubscribe_Click"/>
+                </StackPanel>                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="拟人化强度" Width="90" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="HumanCombo" Width="120" SelectedIndex="1">
+                        <ComboBoxItem Content="低" Tag="Low"/>
+                        <ComboBoxItem Content="中" Tag="Medium"/>
+                        <ComboBoxItem Content="高" Tag="High"/>
+                    </ComboBox>
+                    <Button Content="生成拟人序列" Width="110" Margin="8,0,0,0" Click="Humanize_Click"/>
+                    <Button Content="UI 适配检测" Width="110" Margin="8,0,0,0" Click="UiAdapt_Click"/>
+                    <Button Content="网络镜像切换" Width="110" Margin="8,0,0,0" Click="Network_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8">
+            <TextBox x:Name="ScriptsLog" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
+                     Background="White" BorderThickness="0" Padding="10" VerticalScrollBarVisibility="Auto"/>
+        </Border>
+    </Grid>
+</Page>
