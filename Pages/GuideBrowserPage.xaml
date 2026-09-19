@@ -1,19 +1,47 @@
-<Page x:Class="BetterGIProWpf.Pages.GuideBrowserPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" Background="{DynamicResource BgMain}">
-  <ScrollViewer Padding="24"><StackPanel>
-    <TextBlock Text="Built-in Guide Browser" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
-    <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-      <TextBox x:Name="UrlBox" Grid.Column="0" Height="34" VerticalContentAlignment="Center" Text="https://www.bilibili.com" Margin="0,0,8,0"/>
-      <Button x:Name="OpenBtn" Grid.Column="1" Content="Open" Width="80" Height="34" Click="OpenBtn_Click"/>
-    </Grid>
-    <Border Height="440" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8"><wv2:WebView2 x:Name="Web"/></Border>
-    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-      <Button Content="Play" Width="80" Margin="0,0,8,0" Click="PlayBtn_Click"/>
-      <Button Content="Pause" Width="80" Margin="0,0,8,0" Click="PauseBtn_Click"/>
-      <Button Content="Capture Frame" Width="110" Margin="0,0,8,0" Click="CaptureBtn_Click"/>
-      <Button Content="Analyze Video" Width="120" Margin="0,0,8,0" Click="AnalyzeBtn_Click"/>
-      <Button Content="Go Execute" Width="100" Margin="0,0,8,0" Click="GoExecuteBtn_Click"/>
-      <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}"/>
-    </StackPanel>
-    <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,12,0,0"><TextBlock x:Name="ResultText" TextWrapping="Wrap"/></Border>
-  </StackPanel></ScrollViewer>
+<Page x:Class="BetterGIProWpf.Pages.GuideBrowserPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+      Background="{DynamicResource BgMain}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
+        <StackPanel>
+            <TextBlock Text="内置攻略浏览器" FontSize="20" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextMain}" Margin="0,0,0,12"/>
+            <TextBlock Text="直接在软件内打开 B站/YouTube 等攻略网页，定位视频、逐帧抓取并由 AI 识别成操作步骤。"
+                       Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+            <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="UrlBox" Grid.Column="0" Height="34" VerticalContentAlignment="Center"
+                         Text="https://www.bilibili.com" Margin="0,0,8,0"/>
+                <Button x:Name="OpenBtn" Grid.Column="1" Content="打开" Width="80" Height="34" Click="OpenBtn_Click"/>
+            </Grid>
+            <Border Height="440" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8">
+                <wv2:WebView2 x:Name="Web"/>
+            </Border>
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                <Button Content="▶ 播放" Width="80" Margin="0,0,8,0" Click="PlayBtn_Click"/>
+                <Button Content="⏸ 暂停" Width="80" Margin="0,0,8,0" Click="PauseBtn_Click"/>
+                <TextBlock Text="跳到" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{DynamicResource TextMuted}"/>
+                <TextBox x:Name="SeekBox" Width="70" Height="28" Text="0" VerticalContentAlignment="Center"/>
+                <TextBlock Text="秒" VerticalAlignment="Center" Margin="6,0,12,0" Foreground="{DynamicResource TextMuted}"/>
+                <Button Content="跳转" Width="70" Click="SeekBtn_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <Button x:Name="CaptureBtn" Content="📸 抓取关键帧" Width="130" Margin="0,0,8,0" Click="CaptureBtn_Click"/>
+                <Button x:Name="AnalyzeBtn" Content="🤖 识别此网页视频" Width="150" Margin="0,0,8,0" Click="AnalyzeBtn_Click"/>
+                <Button x:Name="ContinuousStartBtn" Content="▶ 持续识别(2FPS)" Width="140" Margin="0,0,8,0" Click="ContinuousStart_Click"/>
+                <Button x:Name="ContinuousStopBtn" Content="⏹ 停止并保存" Width="120" Margin="0,0,8,0" IsEnabled="False" Click="ContinuousStop_Click"/>
+                <Button x:Name="GoExecuteBtn" Content="▶ 前往执行" Width="100" Margin="0,0,8,0" Click="GoExecuteBtn_Click"/>
+                <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}"/>
+            </StackPanel>
+            <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                    CornerRadius="8" Padding="12" Margin="0,12,0,0">
+                <TextBlock x:Name="ResultText" Text="识别结果将显示在这里。" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextMain}" FontSize="13"/>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
 </Page>
