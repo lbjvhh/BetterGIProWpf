@@ -1,49 +1,33 @@
 name: Regression
-
 on:
-  push:
-    branches: [main, master]
+  push: { branches: [main] }
   pull_request:
-  schedule:
-    - cron: "0 2 * * 0"
+  schedule: [{ cron: "0 2 * * 0" }]
   workflow_dispatch:
-
 jobs:
-  unit-tests:
-    name: Python 单元测试
+  python-unit:
     runs-on: ubuntu-latest
-    defaults:
-      run: { working-directory: nitrogen_bridge }
+    defaults: { run: { working-directory: nitrogen_bridge } }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov
-      - run: pytest tests/ -v || true
-
+      - run: pip install -r requirements.txt pytest pytest-cov
+      - run: pytest tests/ -v --cov=. || true
   dotnet-build:
-    name: C# 构建
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: "8.0.x" }
-      - run: dotnet build BetterGIProWpf.csproj -c Release --nologo
-        working-directory: BetterGIProWpf
-
+      - run: dotnet build BetterGIProWpf/BetterGIProWpf.csproj -c Release --nologo
   game-regression:
-    name: 游戏实跑回归（自托管 GPU）
-    needs: [unit-tests, dotnet-build]
+    needs: [python-unit, dotnet-build]
     runs-on: [self-hosted, windows, gpu]
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-      - name: 跑回归视频集
-        run: python scripts/run_regression.py --videos test_videos/ --report report.json
-        working-directory: nitrogen_bridge
+      - run: cd nitrogen_bridge; python scripts/run_regression.py --videos test_videos/ --report report.json
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: game-regression-report, path: report.json }
+        with: { name: game-regression, path: nitrogen_bridge/report.json }

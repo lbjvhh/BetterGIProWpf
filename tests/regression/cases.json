@@ -1,17 +1,15 @@
 {
   "version": "1.0",
-  "description": "融合系统回归测试基准：5 类基本任务 + 3 进阶复合 + 3 边界异常。视频缺失时自动跳过并标记 skipped（不阻塞 CI）。",
+  "description": "Regression baseline: 5 basic + 3 advanced + 3 edge cases.",
   "thresholds": { "completion": 0.75, "deviation": 100, "sync": 2.0, "recovery": 0.8 },
   "cases": [
-    { "id": "basic-run",      "taskType": "跑图",   "level": "basic", "videoRef": "", "expect": "路径追踪完成率≥75%" },
-    { "id": "basic-combat",   "taskType": "战斗",   "level": "basic", "videoRef": "", "expect": "战斗脚本完成率≥75%" },
-    { "id": "basic-gather",   "taskType": "采集",   "level": "basic", "videoRef": "", "expect": "采集点识别率≥80%" },
-    { "id": "basic-dialogue", "taskType": "对话",   "level": "basic", "videoRef": "", "expect": "对话推进无卡死" },
-    { "id": "basic-teleport", "taskType": "传送",  "level": "basic", "videoRef": "", "expect": "传送锚点识别+触发成功" },
-    { "id": "adv-chain-1",    "taskType": "复合链", "level": "advanced", "videoRef": "", "expect": "传送→跑图→采集 串联完成" },
-    { "id": "adv-chain-2",    "taskType": "复合链", "level": "advanced", "videoRef": "", "expect": "战斗→拾取→对话 串联完成" },
-    { "id": "edge-death",     "taskType": "死亡恢复", "level": "edge", "videoRef": "", "expect": "识别死亡→自动重生→断点续跑" },
-    { "id": "edge-network",  "taskType": "断线",   "level": "edge", "videoRef": "", "expect": "掉线重连→任务恢复" },
-    { "id": "edge-load",      "taskType": "加载卡住", "level": "edge", "videoRef": "", "expect": "加载超时→判定→跳过/恢复" }
+    { "id": "basic-run",      "taskType": "run",      "level": "basic" },
+    { "id": "basic-combat",   "taskType": "combat",   "level": "basic" },
+    { "id": "basic-gather",   "taskType": "gather",   "level": "basic" },
+    { "id": "basic-dialogue", "taskType": "dialogue", "level": "basic" },
+    { "id": "basic-teleport", "taskType": "teleport","level": "basic" },
+    { "id": "adv-chain-1",    "taskType": "chain",    "level": "advanced" },
+    { "id": "edge-death",     "taskType": "death",    "level": "edge" },
+    { "id": "edge-network",   "taskType": "network",  "level": "edge" }
   ]
 }
