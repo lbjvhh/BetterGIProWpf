@@ -2,9 +2,11 @@ using BetterGIProWpf.Services.Automation;
 
 namespace BetterGIProWpf.Services.EndToEnd;
 
-public enum TrackMode { TaskTrack, EndToEndTrack, Hybrid }
+public enum TrackMode
+{
+    TaskTrack, EndToEndTrack, Hybrid,
+}
 
-/// <summary>双轨执行器：管理主轨与辅轨的协作与回退。</summary>
 public class HybridExecutor
 {
     private readonly IEndToEndAgent _agent;
@@ -34,17 +36,19 @@ public class HybridExecutor
             sw.Stop();
             if (Mode == TrackMode.EndToEndTrack || (Mode == TrackMode.Hybrid && output.Confidence >= ConfidenceThreshold))
             {
-                if (current != TrackMode.EndToEndTrack) { TrackSwitched?.Invoke("已切换到辅轨（端到端代理执行）"); current = TrackMode.EndToEndTrack; }
+                if (current != TrackMode.EndToEndTrack) { TrackSwitched?.Invoke("切换辅轨"); current = TrackMode.EndToEndTrack; }
                 _gamepad.SetState(output);
-                Log?.Invoke($"辅轨执行: 置信度 {output.Confidence:P0} · 推理 {sw.ElapsedMilliseconds}ms");
+                Log?.Invoke($"辅轨: 置信 {output.Confidence:P0} · {sw.ElapsedMilliseconds}ms");
             }
-            else if (Mode == TrackMode.Hybrid)
+            else
             {
-                if (current != TrackMode.TaskTrack) { TrackSwitched?.Invoke($"辅轨置信度 {output.Confidence:P0} < {ConfidenceThreshold:P0}，已回退主轨"); current = TrackMode.TaskTrack; }
+                if (Mode == TrackMode.Hybrid && current != TrackMode.TaskTrack)
+                {
+                    TrackSwitched?.Invoke($"置信 {output.Confidence:P0} < 阈值，回退主轨");
+                    current = TrackMode.TaskTrack;
+                }
                 _gamepad.SetState(new GamePadOutput());
-                Log?.Invoke($"回退主轨: 置信度 {output.Confidence:P0} 低于阈值");
             }
-            else { Log?.Invoke("主轨模式：等待步骤执行器任务"); }
             await Task.Delay(interval, token);
         }
     }
