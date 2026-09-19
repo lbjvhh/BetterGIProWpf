@@ -8,7 +8,9 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+
         <TextBlock Text="攻略知识库 · 语义检索 · 资源/物品/翻译" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+
         <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
                 BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,12,0,12">
             <StackPanel>
@@ -30,8 +32,18 @@
                     <TextBox x:Name="TransBox" Width="140" VerticalContentAlignment="Center" Text="Statue of The Seven"/>
                     <Button Content="译" Width="40" Margin="8,0,0,0" Click="Translate_Click"/>
                 </StackPanel>
+                <!-- P1-9：多模态游戏状态问答 -->
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <TextBlock Text="问答" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="QaBox" Width="380" VerticalContentAlignment="Center"
+                             ToolTip="例如：我现在在哪？/这是什么？/有多少血？/怎么过去？"/>
+                    <Button Content="问" Width="70" Margin="8,0,0,0" Click="Qa_Click"/>
+                    <TextBlock x:Name="QaOcrHint" Text="" Margin="12,0,0,0" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextMuted}" FontSize="11"/>
+                </StackPanel>
             </StackPanel>
         </Border>
+
         <Border Grid.Row="2" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8">
             <TextBox x:Name="KnowledgeLog" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
                      Background="White" BorderThickness="0" Padding="10" VerticalScrollBarVisibility="Auto"/>
