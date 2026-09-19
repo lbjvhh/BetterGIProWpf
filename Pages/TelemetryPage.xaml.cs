@@ -43,6 +43,7 @@ public partial class TelemetryPage : Page
             try
             {
                 try { if (_cpuCounter != null) _dash.Sample("CPU占用%", Math.Round(_cpuCounter.NextValue(), 1)); } catch { }
+
                 var mem = Process.GetCurrentProcess().WorkingSet64 / 1024.0 / 1024.0;
                 _dash.Sample("内存MB", Math.Round(mem, 0));
 
@@ -55,13 +56,29 @@ public partial class TelemetryPage : Page
                 }
                 catch { _dash.Sample("vision在线", 0); }
 
+                // stream_bridge 5005 安全状态（P2-4：检测到停机自动联动 EmergencyStop）
                 try
                 {
                     var r = await _http.GetAsync("http://127.0.0.1:5005/safety_status");
                     if (r.IsSuccessStatusCode)
                     {
                         var json = await r.Content.ReadAsStringAsync();
-                        _dash.Sample("紧急停机", json.Contains("true") ? 1 : 0);
+                        var stopped = json.Contains("\"emergency\":true");
+                        if (stopped)
+                        {
+                            _dash.Sample("紧急停机", 1);
+                            if (!_emergency.IsStopped)
+                            {
+                                _emergency.Raise(EmergencyKind.AntiCheatPopup, "stream_bridge 检测到风险文本，自动停机（紧急状态联动）");
+                                EmerStatus.Text = "⚠ 已停机（bridge）";
+                                TelemetryLog.AppendText("[应急] stream_bridge 上报 emergency=true，已联动停机\n");
+                            }
+                        }
+                        else
+                        {
+                            _dash.Sample("紧急停机", 0);
+                            if (_emergency.IsStopped) { EmerStatus.Text = "运行中"; }
+                        }
                     }
                 }
                 catch { }
@@ -128,6 +145,26 @@ public partial class TelemetryPage : Page
     {
         _emergency.Resume();
         EmerStatus.Text = "已恢复";
+    }
+
+    /// <summary>P2-4：安全复位 —— 调 stream_bridge /safety_reset 解除停机。</summary>
+    private async void SafetyReset_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+            var resp = await http.PostAsync("http://127.0.0.1:5005/safety_reset",
+                new System.Net.Http.StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+            var json = await resp.Content.ReadAsStringAsync();
+            _emergency.Resume();
+            EmerStatus.Text = resp.IsSuccessStatusCode ? $"已复位({json})" : "复位失败";
+            TelemetryLog.AppendText($"[应急] 安全复位 → {json}\n");
+        }
+        catch (Exception ex)
+        {
+            EmerStatus.Text = "bridge 未启动";
+            TelemetryLog.AppendText($"[应急] 安全复位失败: {ex.Message}（stream_bridge 5005 未启动？）\n");
+        }
     }
 
     private void Replay_Click(object sender, RoutedEventArgs e)
