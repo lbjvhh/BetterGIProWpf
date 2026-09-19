@@ -29,6 +29,8 @@
                 <StackPanel Orientation="Horizontal">
                     <Button Content="▶ 模拟一次对比分析" Width="150" Click="Analyze_Click"/>
                     <Button Content="⚡ 实时分析(当前OCR)" Width="160" Margin="8,0,0,0" Click="LiveAnalyze_Click"/>
+                    <Button Content="🎵 识别音乐场景" Width="130" Margin="8,0,0,0" Click="MusicScene_Click"/>
+                    <TextBlock x:Name="MusicSceneLabel" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextMuted}"/>
                     <CheckBox x:Name="VoiceChk" Content="语音播报建议" IsChecked="True" Margin="16,0,0,0" VerticalAlignment="Center"/>
                     <TextBlock x:Name="LiveOcrStatus" Text="" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
