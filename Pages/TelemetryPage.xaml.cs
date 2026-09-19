@@ -16,7 +16,11 @@ public partial class TelemetryPage : Page
     public TelemetryPage()
     {
         InitializeComponent();
-        _emergency.Alerted += ev => Dispatcher.Invoke(() => { TelemetryLog.AppendText($"[紧急警报] {ev.Kind}: {ev.Detail}\n"); EmerStatus.Text = "已停机"; });
+        _emergency.Alerted += ev => Dispatcher.Invoke(() =>
+        {
+            TelemetryLog.AppendText($"[紧急警报] {ev.Kind}: {ev.Detail}\n");
+            EmerStatus.Text = "已停机";
+        });
         _emergency.Log += m => Dispatcher.Invoke(() => TelemetryLog.AppendText(m + "\n"));
     }
 
@@ -45,13 +49,17 @@ public partial class TelemetryPage : Page
         TelemetryLog.AppendText($"已导出指标 CSV → {path}\n");
     }
 
-    private void EmergencyNet_Click(object sender, RoutedEventArgs e) => _emergency.Raise(EmergencyKind.NetworkError, "网络连接失败，正在重试…（模拟）");
-    private void EmergencyBan_Click(object sender, RoutedEventArgs e) => _emergency.Raise(EmergencyKind.BanWarning, "检测到账号异常提示（模拟风险文本）");
+    private void EmergencyNet_Click(object sender, RoutedEventArgs e) =>
+        _emergency.Raise(EmergencyKind.NetworkError, "网络连接失败（模拟）");
+
+    private void EmergencyBan_Click(object sender, RoutedEventArgs e) =>
+        _emergency.Raise(EmergencyKind.BanWarning, "检测到账号异常提示（模拟）");
+
     private void Resume_Click(object sender, RoutedEventArgs e) { _emergency.Resume(); EmerStatus.Text = "已恢复"; }
 
     private void Replay_Click(object sender, RoutedEventArgs e)
     {
-        TelemetryLog.AppendText("== 记录一次任务执行（帧+输入+识别） ==\n");
+        TelemetryLog.AppendText("== 记录一次任务执行 ==\n");
         for (var i = 0; i < 20; i++)
         {
             _replayA.Record(new ReplayFrame
@@ -63,12 +71,13 @@ public partial class TelemetryPage : Page
                 DeviationNote = i is 8 or 15 ? "与计划路径偏离" : null
             });
         }
-        TelemetryLog.AppendText($"已记录 {_replayA.Count} 帧，标记偏离 {_replayA.DeviationCount} 个\n");
+        TelemetryLog.AppendText($"已记录 {_replayA.Count} 帧，偏离 {_replayA.DeviationCount} 个\n");
     }
 
     private void Compare_Click(object sender, RoutedEventArgs e)
     {
-        if (_replayA.Count == 0) { Replay_Click(sender, e); }
-        TelemetryLog.AppendText("== 两次执行对比 ==\n" + ReplayRecorder.Compare(_replayA, _replayB) + "\n");
+        if (_replayA.Count == 0) Replay_Click(sender, e);
+        TelemetryLog.AppendText("== 两次执行对比 ==\n");
+        TelemetryLog.AppendText(ReplayRecorder.Compare(_replayA, _replayB) + "\n");
     }
 }
