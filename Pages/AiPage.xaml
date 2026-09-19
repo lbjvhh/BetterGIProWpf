@@ -1,1 +1,74 @@
-<Page x:Class="BetterGIProWpf.Pages.AiPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"><Grid Margin="24"><TextBlock Text="AI Settings" FontSize="20"/></Grid></Page>
+<Page x:Class="BetterGIProWpf.Pages.AiPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{DynamicResource BgMain}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
+        <StackPanel MaxWidth="680">
+            <TextBlock Text="AI 引擎（本地优先）" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" Margin="0,0,0,6"/>
+            <TextBlock Text="全部 AI 能力基于本地引擎运行：系统 OCR 文字识别、本地语音合成/识别、内置游戏知识库与规则推理。无需联网、无需 API Key。"
+                       Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+            <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="本地引擎状态" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock x:Name="StatusText" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" LineHeight="20"/>
+                </StackPanel>
+            </Border>
+
+            <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="本地能力演示（离线可用）" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="① OCR 文字识别" Width="120" VerticalAlignment="Center"/>
+                        <Button Content="选择图片并识别" Width="130" Click="OcrTest_Click"/>
+                    </StackPanel>
+                    <TextBlock x:Name="OcrResult" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,10" MaxHeight="90"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="② 语音合成 TTS" Width="120" VerticalAlignment="Center"/>
+                        <TextBox x:Name="TtsBox" Width="280" Height="28" VerticalContentAlignment="Center" Text="欢迎使用 BetterGI Pro，本地语音合成已就绪"/>
+                        <Button Content="播放" Width="70" Margin="8,0,0,0" Click="TtsTest_Click"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,8">
+                        <TextBlock Text="③ 游戏问答 Q&amp;A" Width="120" VerticalAlignment="Center"/>
+                        <TextBox x:Name="QaBox" Width="280" Height="28" VerticalContentAlignment="Center" Text="北风狼王在哪？"/>
+                        <Button Content="本地回答" Width="90" Margin="8,0,0,0" Click="QaTest_Click"/>
+                    </StackPanel>
+                    <TextBlock x:Name="QaResult" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                </StackPanel>
+            </Border>
+
+            <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="16">
+                <StackPanel>
+                    <CheckBox x:Name="ExternalChk" Content="启用外部模型作为可选增强（默认关闭，本地引擎优先）" Margin="0,0,0,10" Checked="ExternalChk_Changed" Unchecked="ExternalChk_Changed"/>
+                    <StackPanel x:Name="ExternalPanel" IsEnabled="False" Opacity="0.5">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="提供商" Width="90" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="ProviderCombo" Width="300" SelectedIndex="0">
+                                <ComboBoxItem Content="OpenAI 兼容" Tag="openai"/>
+                                <ComboBoxItem Content="DeepSeek" Tag="deepseek"/>
+                                <ComboBoxItem Content="通义千问" Tag="qwen"/>
+                                <ComboBoxItem Content="Ollama 本地" Tag="ollama"/>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="Base URL" Width="90" VerticalAlignment="Center"/>
+                            <TextBox x:Name="BaseUrlBox" Width="300" Height="30" VerticalContentAlignment="Center" Text="https://api.openai.com/v1"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="API Key" Width="90" VerticalAlignment="Center"/>
+                            <PasswordBox x:Name="KeyBox" Width="300" Height="30"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="模型" Width="90" VerticalAlignment="Center"/>
+                            <TextBox x:Name="ModelBox" Width="300" Height="30" VerticalContentAlignment="Center" Text="gpt-4o"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="保存" Width="90" Margin="0,0,8,0" Click="SaveBtn_Click"/>
+                            <Button Content="测试连接" Width="90" Click="TestBtn_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
