@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
+using BetterGIProWpf.Services.Audio;
 using BetterGIProWpf.Services.Replay;
 using BetterGIProWpf.Services.Safety;
 using BetterGIProWpf.Services.Telemetry;
@@ -19,6 +20,8 @@ public partial class TelemetryPage : Page
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(2) };
     private readonly PerformanceCounter? _cpuCounter;
     private readonly Stopwatch _sw = new();
+    private readonly AudioSceneClassifier _audioScene = new();
+    private readonly HttpClient _httpLong = new() { Timeout = TimeSpan.FromSeconds(30) };
 
     public TelemetryPage()
     {
@@ -42,11 +45,14 @@ public partial class TelemetryPage : Page
         {
             try
             {
+                // CPU 占用
                 try { if (_cpuCounter != null) _dash.Sample("CPU占用%", Math.Round(_cpuCounter.NextValue(), 1)); } catch { }
 
+                // 内存占用（MB）
                 var mem = Process.GetCurrentProcess().WorkingSet64 / 1024.0 / 1024.0;
                 _dash.Sample("内存MB", Math.Round(mem, 0));
 
+                // vision_server 5004 响应时间
                 var t0 = Stopwatch.StartNew();
                 try
                 {
@@ -83,8 +89,10 @@ public partial class TelemetryPage : Page
                 }
                 catch { }
 
+                // 任务进度（基于运行时长的占位）
                 _dash.Sample("运行时长s", Math.Round(_sw.Elapsed.TotalSeconds, 0));
 
+                // 更新 UI
                 var names = _dash.Names;
                 DashSummary.Text = $"{names.Count} 项指标 · " +
                     $"CPU={_dash.Latest("CPU占用%"):0}% · " +
@@ -147,6 +155,47 @@ public partial class TelemetryPage : Page
         EmerStatus.Text = "已恢复";
     }
 
+    /// <summary>P3: 设置 UI 基线帧。</summary>
+    private async void UiBaseline_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var http = AppState.Http;
+            var grab = await http.PostAsync("http://127.0.0.1:5005/grab",
+                new System.Net.Http.StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+            var gj = await grab.Content.ReadAsStringAsync();
+            using var doc = System.Text.Json.JsonDocument.Parse(gj);
+            var b64 = doc.RootElement.GetProperty("frame_b64").GetString();
+            var body = System.Text.Json.JsonSerializer.Serialize(new { image = b64, name = DateTime.Now.ToString("HHmmss") });
+            var r = await http.PostAsync("http://127.0.0.1:5004/ui_set_baseline",
+                new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+            UiDiffStatus.Text = "基线已设置";
+            TelemetryLog.AppendText($"[UI] 基线已设置\n");
+        }
+        catch (Exception ex) { UiDiffStatus.Text = "失败"; TelemetryLog.AppendText($"[UI] {ex.Message}\n"); }
+    }
+
+    /// <summary>P3: 对比当前帧与基线，检测 UI 变化。</summary>
+    private async void UiDiff_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var http = AppState.Http;
+            var grab = await http.PostAsync("http://127.0.0.1:5005/grab",
+                new System.Net.Http.StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+            var gj = await grab.Content.ReadAsStringAsync();
+            using var doc = System.Text.Json.JsonDocument.Parse(gj);
+            var b64 = doc.RootElement.GetProperty("frame_b64").GetString();
+            var body = System.Text.Json.JsonSerializer.Serialize(new { image = b64, threshold = 500 });
+            var r = await http.PostAsync("http://127.0.0.1:5004/ui_diff",
+                new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+            var rj = await r.Content.ReadAsStringAsync();
+            UiDiffStatus.Text = rj;
+            TelemetryLog.AppendText($"[UI diff] {rj}\n");
+        }
+        catch (Exception ex) { UiDiffStatus.Text = "失败"; TelemetryLog.AppendText($"[UI diff] {ex.Message}\n"); }
+    }
+
     /// <summary>P2-4：安全复位 —— 调 stream_bridge /safety_reset 解除停机。</summary>
     private async void SafetyReset_Click(object sender, RoutedEventArgs e)
     {
@@ -167,6 +216,43 @@ public partial class TelemetryPage : Page
         }
     }
 
+    /// <summary>模块24: 网络波动检测。</summary>
+    private async void NetCheck_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var http = AppState.Http;
+            var resp = await http.PostAsync("http://127.0.0.1:5005/network_check",
+                new System.Net.Http.StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+            var json = await resp.Content.ReadAsStringAsync();
+            TelemetryLog.AppendText($"[网络] {json}\n");
+            EmerStatus.Text = json.Contains("\"stuck\":true") ? "网络疑似卡住" : "网络正常";
+        }
+        catch (Exception ex) { TelemetryLog.AppendText($"[网络] 失败: {ex.Message}\n"); }
+    }
+
+    /// <summary>模块21/22: 异常诊断知识库。</summary>
+    private readonly Services.Adaptive.ExceptionAdvisor _advisor = new();
+
+    private void Diag_Click(object sender, RoutedEventArgs e)
+    {
+        var err = ErrBox.Text.Trim();
+        if (err.Length == 0) return;
+        var strategies = _advisor.Diagnose(err);
+        TelemetryLog.AppendText($"[诊断] 错误: {err}\n");
+        if (strategies.Count == 0) TelemetryLog.AppendText("  无匹配策略\n");
+        foreach (var s in strategies)
+            TelemetryLog.AppendText($"  → P{s.Priority} {s.Name}: {s.Action}\n");
+        _advisor.RecordResult(err, strategies.FirstOrDefault()?.Name ?? "无", "已推荐");
+    }
+
+    private void DiagExport_Click(object sender, RoutedEventArgs e)
+    {
+        var path = System.IO.Path.Combine(AppContext.BaseDirectory, "User", "diag_history.json");
+        System.IO.File.WriteAllText(path, _advisor.ExportHistoryJson(), System.Text.Encoding.UTF8);
+        TelemetryLog.AppendText($"[诊断] 历史已导出到 {path}\n");
+    }
+
     private void Replay_Click(object sender, RoutedEventArgs e)
     {
         TelemetryLog.AppendText("== 记录一次任务执行（帧+输入+识别） ==\n");
@@ -185,10 +271,132 @@ public partial class TelemetryPage : Page
         TelemetryLog.AppendText($"导出 JSON 示例: {_replayA.ExportJson()[..80]}…\n");
     }
 
+    /// <summary>P3: 导出最近一次持续识别的步骤 JSON 到 User/Replays/。</summary>
+    private void ExportReplay_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dir = System.IO.Path.Combine(AppContext.BaseDirectory, "User", "Replays");
+            System.IO.Directory.CreateDirectory(dir);
+            var path = System.IO.Path.Combine(dir, $"run_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+            System.IO.File.WriteAllText(path, AppState.LastStepsJson, System.Text.Encoding.UTF8);
+            var stepCount = AppState.LastStepsJson.Count(c => c == '{') - 1;
+            TelemetryLog.AppendText($"[回放] 已导出 {stepCount} 步到 {path}\n");
+        }
+        catch (Exception ex) { TelemetryLog.AppendText($"[回放] 导出失败: {ex.Message}\n"); }
+    }
+
     private void Compare_Click(object sender, RoutedEventArgs e)
     {
-        if (_replayA.Count == 0) { Replay_Click(sender, e); }
-        TelemetryLog.AppendText("== 两次执行对比 ==\n");
-        TelemetryLog.AppendText(ReplayRecorder.Compare(_replayA, _replayB) + "\n");
+        // 模块18: 读 User/Replays/ 下最近两个 JSON 对比
+        try
+        {
+            var dir = System.IO.Path.Combine(AppContext.BaseDirectory, "User", "Replays");
+            if (!System.IO.Directory.Exists(dir)) { TelemetryLog.AppendText("[对比] 无回放目录\n"); return; }
+            var files = System.IO.Directory.GetFiles(dir, "run_*.json").OrderByDescending(f => f).Take(2).ToList();
+            if (files.Count < 2) { TelemetryLog.AppendText("[对比] 需至少 2 个回放文件\n"); return; }
+            var j1 = System.IO.File.ReadAllText(files[0]);
+            var j2 = System.IO.File.ReadAllText(files[1]);
+            using var d1 = System.Text.Json.JsonDocument.Parse(j1);
+            using var d2 = System.Text.Json.JsonDocument.Parse(j2);
+            var a1 = d1.RootElement.EnumerateArray().ToList();
+            var a2 = d2.RootElement.EnumerateArray().ToList();
+            TelemetryLog.AppendText($"== 对比 {System.IO.Path.GetFileName(files[0])} vs {System.IO.Path.GetFileName(files[1])} ==\n");
+            TelemetryLog.AppendText($"  步数: {a1.Count} vs {a2.Count}\n");
+            // 动作分布对比
+            var g1 = a1.GroupBy(x => x.GetProperty("Action").GetString()).Select(g => $"{g.Key}={g.Count()}");
+            var g2 = a2.GroupBy(x => x.GetProperty("Action").GetString()).Select(g => $"{g.Key}={g.Count()}");
+            TelemetryLog.AppendText($"  A 分布: {string.Join(", ", g1)}\n");
+            TelemetryLog.AppendText($"  B 分布: {string.Join(", ", g2)}\n");
+            var diff = Math.Abs(a1.Count - a2.Count);
+            TelemetryLog.AppendText($"  步数差: {diff}\n");
+        }
+        catch (Exception ex) { TelemetryLog.AppendText($"[对比] 失败: {ex.Message}\n"); }
+    }
+
+    /// <summary>模块17: 音频场景识别——NAudio 采样 1 秒 → CPU 特征 → 分类 + 视觉融合。</summary>
+    private async void AudioScene_Click(object sender, RoutedEventArgs e)
+    {
+        TelemetryLog.AppendText("[音频] 正在采样 1s 音频…\n");
+        try
+        {
+            var pcm = await Task.Run(RecordOneSecondPcm);
+            if (pcm == null || pcm.Length == 0)
+            {
+                TelemetryLog.AppendText("[音频] 未采集到数据（无音频输入设备或已被占用）\n");
+                return;
+            }
+            var feat = AudioSceneClassifier.Extract(pcm);
+            var type = _audioScene.Classify(feat);
+            var visual = AppState.LastOcrText ?? "";
+            var fused = AudioSceneClassifier.Fuse(type, visual);
+            SceneStatus.Text = $"{type} / {fused}";
+            TelemetryLog.AppendText($"[音频] RMS={feat.Rms:0.000} ZCR={feat.ZeroCrossingRate:0.000} 质心={feat.SpectralCentroid:0.000} → {type}（延迟 {_audioScene.RecognitionLatencyMs:0.0}ms）\n");
+            TelemetryLog.AppendText($"[音频] 视觉融合: {fused}\n");
+        }
+        catch (Exception ex) { TelemetryLog.AppendText($"[音频] 失败: {ex.Message}\n"); }
+    }
+
+    private static byte[]? RecordOneSecondPcm()
+    {
+        var waveIn = new NAudio.Wave.WaveInEvent
+        {
+            WaveFormat = new NAudio.Wave.WaveFormat(16000, 16, 1),
+            BufferMilliseconds = 200
+        };
+        var buf = new System.Collections.Generic.List<byte>();
+        waveIn.DataAvailable += (_, e) => { lock (buf) buf.AddRange(e.Buffer); };
+        try
+        {
+            waveIn.StartRecording();
+            System.Threading.Thread.Sleep(1100);
+            waveIn.StopRecording();
+        }
+        finally { waveIn.Dispose(); }
+        lock (buf) return buf.Count == 0 ? null : buf.ToArray();
+    }
+
+    /// <summary>模块3 辅助: YOLO 检测当前帧（抓帧 → vision_server /yolo）。</summary>
+    private async void YoloDetect_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var http = AppState.Http;
+            var grab = await http.PostAsync("http://127.0.0.1:5005/grab",
+                new System.Net.Http.StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+            var gj = await grab.Content.ReadAsStringAsync();
+            using var doc = System.Text.Json.JsonDocument.Parse(gj);
+            if (!doc.RootElement.TryGetProperty("frame_b64", out var fe) || fe.GetString() is not { Length: > 0 } frame)
+            { TelemetryLog.AppendText("[YOLO] 抓帧失败\n"); return; }
+            var body = System.Text.Json.JsonSerializer.Serialize(new { image = frame });
+            var r = await _httpLong.PostAsync("http://127.0.0.1:5004/yolo",
+                new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+            var rj = await r.Content.ReadAsStringAsync();
+            SceneStatus.Text = "YOLO 完成";
+            TelemetryLog.AppendText($"[YOLO] {rj[..Math.Min(rj.Length, 400)]}\n");
+        }
+        catch (Exception ex) { TelemetryLog.AppendText($"[YOLO] 失败: {ex.Message}\n"); }
+    }
+
+    /// <summary>模块15: 装备检测——抓帧 → vision_server /equipment_detect（YOLO 图标计数）。</summary>
+    private async void EquipDetect_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var http = AppState.Http;
+            var grab = await http.PostAsync("http://127.0.0.1:5005/grab",
+                new System.Net.Http.StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+            var gj = await grab.Content.ReadAsStringAsync();
+            using var doc = System.Text.Json.JsonDocument.Parse(gj);
+            if (!doc.RootElement.TryGetProperty("frame_b64", out var fe) || fe.GetString() is not { Length: > 0 } frame)
+            { TelemetryLog.AppendText("[装备] 抓帧失败\n"); return; }
+            var body = System.Text.Json.JsonSerializer.Serialize(new { image = frame });
+            var r = await _httpLong.PostAsync("http://127.0.0.1:5004/equipment_detect",
+                new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+            var rj = await r.Content.ReadAsStringAsync();
+            SceneStatus.Text = "装备检测完成";
+            TelemetryLog.AppendText($"[装备] {rj[..Math.Min(rj.Length, 400)]}\n");
+        }
+        catch (Exception ex) { TelemetryLog.AppendText($"[装备] 失败: {ex.Message}\n"); }
     }
 }
