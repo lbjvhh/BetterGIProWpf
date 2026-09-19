@@ -34,7 +34,21 @@
                     <Button Content="刷新仓库" Width="90" Margin="8,0,0,0" Click="RepoRefresh_Click"/>
                     <Button Content="搜索" Width="70" Margin="8,0,0,0" Click="RepoSearch_Click"/>
                     <Button Content="订阅首个" Width="90" Margin="8,0,0,0" Click="RepoSubscribe_Click"/>
-                </StackPanel>                <StackPanel Orientation="Horizontal">
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="上传云端" Width="90" VerticalAlignment="Center"/>
+                    <PasswordBox x:Name="PatBox" Width="240" VerticalContentAlignment="Center"
+                                 ToolTip="GitHub Personal Access Token（classic，需 repo 权限）"/>
+                    <ComboBox x:Name="UploadCatCombo" Width="90" Margin="8,0,0,0" SelectedIndex="0">
+                        <ComboBoxItem Content="combat"/>
+                        <ComboBoxItem Content="pathing"/>
+                        <ComboBoxItem Content="js"/>
+                        <ComboBoxItem Content="tcg"/>
+                    </ComboBox>
+                    <Button Content="上传脚本" Width="90" Margin="8,0,0,0" Click="Upload_Click"
+                            ToolTip="P0-2：上传扫描到的首个脚本到 lbjvhh/BetterGIProWpf scripts/ 并自动更新 index.json"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
                     <TextBlock Text="拟人化强度" Width="90" VerticalAlignment="Center"/>
                     <ComboBox x:Name="HumanCombo" Width="120" SelectedIndex="1">
                         <ComboBoxItem Content="低" Tag="Low"/>

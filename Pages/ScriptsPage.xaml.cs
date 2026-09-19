@@ -58,7 +58,6 @@ public partial class ScriptsPage : Page
         var entries = mgr.Scan();
         _lastScanned = entries;
 
-        // 优先 AutoFight 战斗脚本（.txt/.json），其次任意脚本
         var target = entries.FirstOrDefault(x => x.Kind == ScriptKind.AutoFight) ??
                      entries.FirstOrDefault(x => x.Path.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)) ??
                      entries.FirstOrDefault();
@@ -210,9 +209,26 @@ public partial class ScriptsPage : Page
         var (ok, msg) = await _repo.SubscribeAsync(hits[0], localDir);
         ScriptsLog.AppendText($"  {msg}\n");
     }
+
+    /// <summary>P0-2：一键上传扫描到的脚本到云端仓库（GitHub Contents API + PAT，自动更新 index.json）。</summary>
+    private async void Upload_Click(object sender, RoutedEventArgs e)
+    {
+        var pat = PatBox.Password.Trim();
+        var cat = (UploadCatCombo.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content?.ToString() ?? "combat";
+        var target = _lastScanned.FirstOrDefault(x => x.Kind == ScriptKind.AutoFight) ?? _lastScanned.FirstOrDefault();
+        if (target == null)
+        {
+            ScriptsLog.AppendText("[上传] 无本地脚本可上传，请先「扫描」或点击「真实执行」生成示例脚本。\n");
+            return;
+        }
+        ScriptsLog.AppendText($"[上传] 上传 [{target.Kind}] {target.Name} → scripts/{cat}/ …\n");
+        var (ok, msg) = await _repo.UploadAsync(target.Path, cat, pat,
+            log: m => Dispatcher.Invoke(() => ScriptsLog.AppendText("  " + m + "\n")));
+        ScriptsLog.AppendText($"  {(ok ? "✅" : "❌")} {msg}\n");
+    }
+
     private void Humanize_Click(object sender, RoutedEventArgs e)
     {
-        // P2-3：强度设置作用于全局实例（CompanionPage/LocalScriptManager 注入链统一生效）
         _human.Level = (HumanCombo.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag?.ToString() switch
         {
             "Low" => HumanizeInput.Intensity.Low,
