@@ -8,7 +8,9 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+
         <TextBlock Text="高光剪辑 · 战报生成 · 解说配音" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+
         <Border Grid.Row="1" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
                 BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,12,0,12">
             <StackPanel>
@@ -25,6 +27,7 @@
                         <ComboBoxItem Content="21:9"/>
                     </ComboBox>
                     <Button Content="▶ 模拟录制+高光识别" Width="160" Margin="12,0,0,0" Click="Record_Click"/>
+                    <Button Content="🎬 真实录制(10s)" Width="140" Margin="8,0,0,0" Click="LiveRecord_Click"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <Button Content="生成战报统计" Width="130" Click="Report_Click"/>
@@ -33,6 +36,7 @@
                 </StackPanel>
             </StackPanel>
         </Border>
+
         <Border Grid.Row="2" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8">
             <TextBox x:Name="MediaLog" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
                      Background="White" BorderThickness="0" Padding="10" VerticalScrollBarVisibility="Auto"/>

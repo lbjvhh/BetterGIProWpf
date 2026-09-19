@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using BetterGIProWpf.Services.LocalAI;
@@ -21,7 +22,7 @@ public partial class MediaPage : Page
 
     private void Record_Click(object sender, RoutedEventArgs e)
     {
-        MediaLog.AppendText("== 模拟任务执行 90 秒后台录制（1080p/30fps 由采集端保证） ==\n");
+        MediaLog.AppendText("== 模拟任务执行 90 秒后台录制 ==\n");
         _recorder.Start();
         var rng = new Random();
         for (var s = 0; s < 90; s++)
@@ -38,10 +39,47 @@ public partial class MediaPage : Page
         _clips = _recorder.Stop();
         MediaLog.AppendText($"识别到 {_clips.Count} 个高光：{string.Join(" / ", _clips.Select(c => $"{c.Reason}@{c.Start.TotalSeconds:0}s"))}\n");
         var trimmed = _recorder.TrimToTarget(_clips, int.Parse((LenCombo.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag?.ToString() ?? "60"));
-        MediaLog.AppendText($"裁剪至目标时长：{trimmed.Count} 段（{trimmed.Sum(c => (c.End - c.Start).TotalSeconds):0}s）\n");
+        MediaLog.AppendText($"裁剪至目标时长：{trimmed.Count} 段\n");
         var subs = _recorder.GenerateSubtitles(trimmed);
-        MediaLog.AppendText($"字幕 {subs.Count} 条（首条: {subs.FirstOrDefault().Text}）\n");
+        MediaLog.AppendText($"字幕 {subs.Count} 条\n");
         MediaStatus.Text = $"录制完成 · 高光 {_clips.Count} · 字幕 {subs.Count}";
+    }
+
+    /// <summary>P1-3：真实录制 10 秒（从 stream_bridge 5005 /grab 抓真实游戏帧）。</summary>
+    private async void LiveRecord_Click(object sender, RoutedEventArgs e)
+    {
+        var btn = (Button)sender;
+        btn.IsEnabled = false;
+        MediaLog.AppendText("== 真实录制 10 秒（从 stream_bridge /grab 抓帧） ==\n");
+        _recorder.Start();
+        using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+        var t0 = DateTime.Now;
+        var n = 0;
+        while ((DateTime.Now - t0).TotalSeconds < 10)
+        {
+            try
+            {
+                var resp = await http.PostAsync("http://127.0.0.1:5005/grab",
+                    new System.Net.Http.StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+                if (resp.IsSuccessStatusCode)
+                {
+                    var json = await resp.Content.ReadAsStringAsync();
+                    using var doc = System.Text.Json.JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("frame_b64", out var fb) && fb.GetString() is { Length: > 0 } b64)
+                    {
+                        var jpg = Convert.FromBase64String(b64);
+                        _recorder.PushFrame(TimeSpan.FromSeconds(n * 0.5), jpg, 1, 1);
+                        n++;
+                    }
+                }
+            }
+            catch (Exception ex) { MediaLog.AppendText($"[grab err] {ex.Message}\n"); break; }
+            await Task.Delay(500);
+        }
+        _clips = _recorder.Stop();
+        MediaLog.AppendText($"真实录制完成：{n} 帧，识别到 {_clips.Count} 个高光片段\n");
+        MediaStatus.Text = $"真实录制 {n} 帧 · 高光 {_clips.Count}";
+        btn.IsEnabled = true;
     }
 
     private void Report_Click(object sender, RoutedEventArgs e)
