@@ -21,6 +21,8 @@ public partial class App : Application
         base.OnStartup(e);
 
         // 单实例保护：已有实例时激活其主窗口并退出。
+        // 原因：多实例同时初始化 WebView2 会争用同一用户数据目录，抛出
+        // COMException 0x800700AA (ERROR_BUSY) 导致闪退。
         _singleInstance = new Mutex(true, MutexName, out bool createdNew);
         if (!createdNew)
         {
@@ -32,8 +34,11 @@ public partial class App : Application
         // 全局异常兜底：任何未处理异常（含 WebView2 初始化失败）不再直接闪退
         DispatcherUnhandledException += (_, args) =>
         {
-            try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"),
-                    $"[{DateTime.Now:HH:mm:ss}] ui {args.Exception}\n"); }
+            try
+            {
+                File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"),
+                    $"[{DateTime.Now:HH:mm:ss}] ui {args.Exception}\n");
+            }
             catch { }
             MessageBox.Show("发生未处理的界面异常：\n" + args.Exception.Message + "\n\n已尝试继续运行。", "BetterGI Pro",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -41,19 +46,36 @@ public partial class App : Application
         };
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
-            try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"),
-                    $"[{DateTime.Now:HH:mm:ss}] app {args.ExceptionObject}\n"); }
+            try
+            {
+                File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"),
+                    $"[{DateTime.Now:HH:mm:ss}] app {args.ExceptionObject}\n");
+            }
             catch { }
         };
         TaskScheduler.UnobservedTaskException += (_, args) =>
         {
-            try { File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"),
-                    $"[{DateTime.Now:HH:mm:ss}] task {args.Exception}\n"); }
+            try
+            {
+                File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"),
+                    $"[{DateTime.Now:HH:mm:ss}] task {args.Exception}\n");
+            }
             catch { }
             args.SetObserved();
         };
 
         LocalAiEngine.Init();
+
+        // 独立 App 形态：BetterGIProWpf.exe --scriptmaker 直接打开脚本工坊
+        if (e.Args.Contains("--scriptmaker", StringComparer.OrdinalIgnoreCase))
+        {
+            try { new ScriptMakerWindow().Show(); }
+            catch (Exception ex)
+            {
+                File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "crash.log"),
+                    $"[{DateTime.Now:HH:mm:ss}] scriptmaker {ex}\n");
+            }
+        }
 
         // P1-4：知识库持久化（启动时从 User/knowledge.json 加载）
         try
@@ -88,6 +110,7 @@ public partial class App : Application
 
     private static void ActivateExistingInstance()
     {
+        // 等待已有实例创建主窗口（最多 2 秒），然后恢复并置前
         IntPtr h = IntPtr.Zero;
         var current = Process.GetCurrentProcess().Id;
         for (int i = 0; i < 20 && h == IntPtr.Zero; i++)
@@ -102,7 +125,7 @@ public partial class App : Application
         }
         if (h != IntPtr.Zero)
         {
-            ShowWindow(h, 9);
+            ShowWindow(h, 9); // SW_RESTORE
             SetForegroundWindow(h);
         }
     }
