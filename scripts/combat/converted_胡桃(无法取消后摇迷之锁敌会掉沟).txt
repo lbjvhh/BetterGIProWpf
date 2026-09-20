@@ -1,0 +1,15 @@
+# ==========================================
+# BetterGI Pro 转换脚本
+# 来源: huiyadanli/bettergi-scripts-list
+# 原始名称: 胡桃(无法取消后摇迷之锁敌会掉沟).txt
+# 分类: combat
+# 转换时间: 2026-09-21 00:03:50
+# ==========================================
+
+// 作者:爱司基模人
+// 描述:
+
+钟离 s(0.2),e(hold),wait(0.3),w(0.2)
+行秋 e,q,e,wait(0.3)
+夜兰 e,e,wait(0.5),e,e,wait(1),q
+胡桃 e,wait(0.2),charge,j,wait(0.55),charge,j,wait(0.55),charge,j,wait(0.55),charge,j,wait(0.55),charge,j,wait(0.55),charge,j,wait(0.55)
