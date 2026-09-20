@@ -1,0 +1,21 @@
+# ==========================================
+# BetterGI Pro 转换脚本
+# 来源: huiyadanli/bettergi-scripts-list
+# 原始名称: 风散兵.txt
+# 分类: combat
+# 转换时间: 2026-09-21 00:09:17
+# ==========================================
+
+// 作者:爱司基模人
+// 描述:
+
+钟离 s(0.1),e(hold),wait(0.3),w(0.1),q,attack(0.05),dash
+行秋 e,q,e,attack(0.05),dash
+夜兰 e,e,wait(0.2),e,e,q
+芙宁娜 e,q,attack(0.05),dash
+珐露珊 e,attack(0.05),dash,click(middle),wait(0.3),charge,q
+云堇 e,q,attack(0.05),dash
+班尼特 e,q,attack(0.05),dash
+琴 e,q,attack(0.05),dash
+钟离 s(0.1),e(hold),wait(0.3),w(0.1)
+流浪者 e,wait(0.2)charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),charge(0.2),wait(0.46),e
