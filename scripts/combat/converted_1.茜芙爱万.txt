@@ -1,11 +1,11 @@
 # ==========================================
 # BetterGI Pro 转换脚本
 # 来源: huiyadanli/bettergi-scripts-list
+# 原始: 1.茜芙爱万.txt
 # 分类: combat
-# 转换时间: 2026-09-20 23:32:20
+# 转换时间: 2026-09-20 23:44:27
 # ==========================================
 
-# 原始战斗脚本
 // 更丝滑版本
 // 作者 mno
 茜特菈莉 attack(0.01),e, click(middle),keypress(e),attack(0.1),keypress(e),keypress(q),attack(0.2),keypress(e),keypress(q),wait(0.2),keypress(e),keypress(q),attack(0.2)
