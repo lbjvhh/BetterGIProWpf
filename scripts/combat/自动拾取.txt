@@ -1,0 +1,11 @@
+# 自动拾取
+# 用法: 在游戏中启动
+
+wait 0.5
+key f 100
+wait 0.5
+key f 100
+wait 0.5
+key f 100
+wait 0.5
+key f 100
