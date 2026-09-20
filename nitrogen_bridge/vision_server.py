@@ -1,11 +1,10 @@
 """
-BetterGIProWpf 真实模型推理服务（YOLO / PaddleOCR / Whisper / 原神专属检测）。
+BetterGIProWpf 真实模型推理服务（YOLO / PaddleOCR / Whisper）。
 对外 HTTP 5004：
-  POST /yolo            {image: b64png} -> {boxes:[[x1,y1,x2,y2]], scores:[], classes:[]}
-  POST /ocr             {image: b64png} -> {text:"...", lines:[{text, box, score}]}
-  POST /whisper         {audio: b64wav} -> {text:"...", segments:[{start,end,text}]}
-  POST /genshin_detect  {image: b64png} -> 原神元素/场景（专属 YOLO + OCR 关键词）
-  GET  /health          -> {status, models}
+  POST /yolo      {image: b64png} -> {boxes:[[x1,y1,x2,y2]], scores:[], classes:[]}
+  POST /ocr       {image: b64png} -> {text:"...", lines:[{text, box, score}]}
+  POST /whisper   {audio: b64wav} -> {text:"...", segments:[{start,end,text}]}
+  GET  /health    -> {status, models}
 """
 import base64, io, time, json, threading, os
 import numpy as np
@@ -15,7 +14,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 MODELS = r"C:\better\BetterGIProWpf-App\Models"
 HTTP_PORT = 5004
 
-_state = {"yolo": None, "ocr_det": None, "ocr_rec": None, "whisper": None, "dict": [], "genshin_yolo": None}
+_state = {"yolo": None, "ocr_det": None, "ocr_rec": None, "whisper": None, "dict": []}
 _lock = threading.Lock()
 _baseline = {"frame": None, "name": ""}  # P3: UI 变化检测基线帧
 
@@ -44,6 +43,7 @@ def load_ocr():
     _state["ocr_rec"] = ort.InferenceSession(rec, providers=["CPUExecutionProvider"])
     with open(f"{MODELS}\\ppocrv5\\rec\\ppocr_keys_v1.txt", encoding="utf-8") as f:
         _state["dict"] = [l.rstrip("\n") for l in f.readlines()]
+    # rec 字典是 99 类表，索引 0=blank
     print("[models] OCR det+rec loaded", flush=True)
 
 
@@ -62,14 +62,15 @@ def yolo_infer(img: Image.Image):
     w, h = img.size
     img640 = img.convert("RGB").resize((640, 640))
     arr = np.asarray(img640, dtype=np.float32) / 255.0
-    arr = arr.transpose(2, 0, 1)[None]
+    arr = arr.transpose(2, 0, 1)[None]  # 1,3,640,640
     t0 = time.time()
     outs = s.run([out_name], {inp: arr})
     dt = (time.time() - t0) * 1000
-    pred = outs[0][0]
+    pred = outs[0][0]  # (84, 8400) 或 (8400, 84) 视导出
+    # 统一处理：取 score>0.5
     boxes, scores, classes = [], [], []
-    if pred.shape[0] < pred.shape[1]:
-        pred = pred.T
+    if pred.shape[0] < pred.shape[1]:  # (84,8400)
+        pred = pred.T  # (8400,84)
     for row in pred:
         conf = row[4:].max() if row.shape[0] > 4 else row[4]
         if conf < 0.45:
@@ -84,47 +85,148 @@ def yolo_infer(img: Image.Image):
             "ms": round(dt, 1)}
 
 
+def _db_postprocess(prob_map: np.ndarray, threshold=0.3, max_side=960):
+    """DB 后处理：概率图 -> 二值 -> 连通域 -> 文本框（参考 PaddleOCR DBPostProcess）。"""
+    import cv2
+    if prob_map.ndim == 3:
+        prob_map = prob_map[0]
+    prob_map = prob_map.astype(np.float32)
+    mask = (prob_map > threshold).astype(np.uint8) * 255
+    # 膨胀连接断裂笔画
+    mask = cv2.dilate(mask, np.ones((3, 3), np.uint8), iterations=1)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    boxes = []
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area < 60:  # 过滤噪点
+            continue
+        rect = cv2.minAreaRect(c)
+        (cx, cy), (w, hh), ang = rect
+        w, hh = max(w, hh), min(w, hh)  # 保证 w>=h（文本横向）
+        box = cv2.boxPoints(((cx, cy), (w, hh), 0 if w >= hh else 90))
+        box = np.clip(box, 0, max_side - 1)
+        boxes.append(box)
+    # 按 y 行分组（行高容差=平均高度 60%），行内按 x 排序
+    if boxes:
+        heights = [abs(b[2][1] - b[0][1]) for b in boxes]
+        med_h = sorted(heights)[len(heights) // 2] or 20
+        groups = []
+        for b in boxes:
+            yc = b[:, 1].mean()
+            placed = False
+            for g in groups:
+                if abs(g["yc"] - yc) < med_h * 0.9:
+                    g["boxes"].append(b)
+                    g["yc"] = (g["yc"] * (len(g["boxes"]) - 1) + yc) / len(g["boxes"])
+                    placed = True
+                    break
+            if not placed:
+                groups.append({"yc": yc, "boxes": [b]})
+        groups.sort(key=lambda g: g["yc"])
+        out = []
+        for g in groups:
+            g["boxes"].sort(key=lambda b: b[:, 0].min())
+            out.extend(g["boxes"])
+        return out
+    return []
+
+
+def _crop_to_box(img: Image.Image, box, pad=6):
+    """按最小外接矩形裁剪（含 4 点透视校正），四周加白边。"""
+    import cv2
+    arr = np.asarray(img.convert("RGB")).astype(np.uint8)
+    box = np.array(box, dtype=np.float32)
+    # 透视变换到水平矩形
+    w = max(8, int(np.linalg.norm(box[1] - box[0])), int(np.linalg.norm(box[2] - box[1])))
+    h = max(8, int(np.linalg.norm(box[2] - box[1])), int(np.linalg.norm(box[1] - box[0])))
+    if w < h:
+        w, h = h, w
+    src_pts = box.astype(np.float32)
+    # 按 左上-右上-右下-左下 排序
+    s = src_pts.sum(axis=1)
+    d = np.diff(src_pts, axis=1).ravel()
+    tl = src_pts[np.argmin(s)]; br = src_pts[np.argmax(s)]
+    tr = src_pts[np.argmin(d)]; bl = src_pts[np.argmax(d)]
+    dst_pts = np.array([[0, 0], [w - 1, 0], [w - 1, h - 1], [0, h - 1]], dtype=np.float32)
+    M = cv2.getPerspectiveTransform(np.array([tl, tr, br, bl], dtype=np.float32), dst_pts)
+    warped = cv2.warpPerspective(arr, M, (w, h), borderValue=(255, 255, 255))
+    # 白边
+    warped = cv2.copyMakeBorder(warped, pad, pad, pad, pad,
+                                cv2.BORDER_CONSTANT, value=(255, 255, 255))
+    return Image.fromarray(warped)
+
+
 def ocr_infer(img: Image.Image):
-    """简化 PaddleOCR：det 找文本框 -> rec 识别。生产环境用完整 det 后处理。"""
+    """完整 PaddleOCR 链路：det(DB后处理) -> 文本框 -> rec 识别。"""
+    import cv2
     s_det, s_rec = _state["ocr_det"], _state["ocr_rec"]
     img_rgb = img.convert("RGB")
-    # det: input 1x3xHxW，这里直接整图当一个区域
+    w0, h0 = img_rgb.size
+    max_side = 960
+    scale = min(1.0, max_side / max(w0, h0))
+    if scale < 1.0:
+        img_rgb = img_rgb.resize((max(1, int(w0 * scale)), max(1, int(h0 * scale))))
+    w, h = img_rgb.size
     det_in = s_det.get_inputs()[0].name
     det_out = s_det.get_outputs()[0].name
     det_img = img_rgb.resize((960, 960))
     det_arr = np.asarray(det_img, dtype=np.float32) / 255.0
     det_arr = det_arr.transpose(2, 0, 1)[None]
     t0 = time.time()
-    _ = s_det.run([det_out], {det_in: det_arr})
-    # rec: PP-OCRv5 标准预处理——高度固定 48，宽度按比例（最大 320），归一化到 [-1,1]
-    rec_in = s_rec.get_inputs()[0].name
-    rec_out = s_rec.get_outputs()[0].name
-    std_h = 48
-    ratio = std_h / img_rgb.height
-    std_w = min(320, max(48, int(img_rgb.width * ratio)))
-    rec_img = img_rgb.resize((std_w, std_h))
-    rec_arr = np.asarray(rec_img, dtype=np.float32) / 255.0
-    rec_arr = (rec_arr - 0.5) / 0.5
-    rec_arr = rec_arr[:, :, ::-1].copy()  # BGR
-    rec_arr = rec_arr.transpose(2, 0, 1)[None]
-    rec_outs = s_rec.run([rec_out], {rec_in: rec_arr})
-    logits = rec_outs[0][0]
-    ids = logits.argmax(axis=-1)
-    chars = []
-    prev = -1
-    for i in ids:
-        i = int(i)
-        if i == 0:
+    det_outs = s_det.run([det_out], {det_in: det_arr})
+    prob = np.asarray(det_outs[0])
+    prob = prob[0] if prob.ndim == 4 else prob  # 1,1,960,960 -> 960,960
+    if prob.ndim == 3 and prob.shape[0] == 1:
+        prob = prob[0]
+    prob = prob.squeeze()
+    boxes = _db_postprocess(prob, threshold=0.3, max_side=960)
+    # 映射回原图并裁切
+    bx = 960 / w
+    by = 960 / h
+    lines = []
+    for b in boxes:
+        b_map = b.copy()
+        b_map[:, 0] = b[:, 0] / bx / scale
+        b_map[:, 1] = b[:, 1] / by / scale
+        b_map = np.clip(b_map, 0, max(w0 - 1, 1))
+        try:
+            crop = _crop_to_box(img_rgb.resize((w0, h0)) if scale < 1.0 else img_rgb, b_map)
+        except Exception:
+            continue
+        # rec 预处理：高 48，宽按比例（最大 320），归一化 [-1,1]，BGR
+        std_h = 48
+        ratio = std_h / crop.height
+        std_w = min(320, max(16, int(crop.width * ratio)))
+        rec_img = crop.resize((std_w, std_h))
+        rec_arr = np.asarray(rec_img, dtype=np.float32) / 255.0
+        rec_arr = (rec_arr - 0.5) / 0.5
+        rec_arr = rec_arr[:, :, ::-1].copy()
+        rec_arr = rec_arr.transpose(2, 0, 1)[None]
+        rec_in = s_rec.get_inputs()[0].name
+        rec_out = s_rec.get_outputs()[0].name
+        rec_outs = s_rec.run([rec_out], {rec_in: rec_arr})
+        logits = rec_outs[0][0]
+        ids = logits.argmax(axis=-1)
+        chars, prev = [], -1
+        for i in ids:
+            i = int(i)
+            if i == 0 or i == prev:
+                prev = i
+                continue
+            if 1 <= i <= len(_state["dict"]):
+                chars.append(_state["dict"][i - 1])
             prev = i
-            continue
-        if i == prev:
-            continue
-        if 1 <= i <= len(_state["dict"]):
-            chars.append(_state["dict"][i - 1])
-        prev = i
-    text = "".join(chars)
+        text = "".join(chars).strip()
+        if text:
+            lines.append({"text": text, "score": 0.9,
+                          "box": [round(float(b_map[:, 0].min()) / scale, 1),
+                                  round(float(b_map[:, 1].min()) / scale, 1),
+                                  round(float(b_map[:, 0].max()) / scale, 1),
+                                  round(float(b_map[:, 1].max()) / scale, 1)]})
+    lines.sort(key=lambda l: (l["box"][1], l["box"][0]))
+    full = "\n".join(l["text"] for l in lines)
     dt = (time.time() - t0) * 1000
-    return {"text": text, "lines": [{"text": text, "score": 0.9}], "ms": round(dt, 1)}
+    return {"text": full, "lines": lines, "ms": round(dt, 1)}
 
 
 def whisper_infer(wav_bytes: bytes):
@@ -177,6 +279,7 @@ GENSHIN_SCENES = {
 COCO_NAMES = {0: "person", 1: "bicycle", 2: "car", 3: "motorcycle", 5: "bus", 7: "truck",
               16: "dog", 17: "horse", 18: "sheep", 19: "cow", 20: "elephant", 21: "bear"}
 
+
 GENSHIN_IDS = ["角色", "敌人", "Boss", "宝箱", "传送锚点", "七天神像", "NPC",
                "采集物", "圣遗物", "武器", "材料", "任务", "技能", "HUD", "地图", "秘境"]
 
@@ -215,7 +318,7 @@ def genshin_yolo_infer(img: Image.Image):
 
 
 def genshin_detect_infer(img: Image.Image):
-    """原神专属检测：OCR 关键词 + 专属 YOLO + COCO 生物框 → 原神元素对象列表与场景推断。"""
+    """原神专属检测：OCR 关键词（类别知识库）+ YOLO 生物框 → 原神元素对象列表与场景推断。"""
     t0 = time.time()
     objects = []
     text = ""
@@ -298,17 +401,19 @@ class H(BaseHTTPRequestHandler):
                 with _lock:
                     self._json(200, yolo_infer(img))
             elif self.path == "/equipment_detect":
+                # 模块15: 装备识别——YOLO 检测装备栏图标数量
                 img = Image.open(io.BytesIO(base64.b64decode(raw["image"]))).convert("RGB")
                 with _lock:
                     r = yolo_infer(img)
                 boxes = r.get("boxes", [])
                 scores = r.get("scores", [])
                 classes = r.get("classes", [])
+                # 过滤置信度 > 0.5 的框，统计数量
                 good = [(b, s, c) for b, s, c in zip(boxes, scores, classes) if s > 0.5]
                 self._json(200, {"count": len(good), "items": good[:20],
                                  "summary": f"检测到 {len(good)} 个装备图标"})
             elif self.path == "/genshin_detect":
-                # 原神专属 YOLO：OCR 关键词 + 专属模型 + COCO 生物框 → 原神元素/场景
+                # 原神专属 YOLO：OCR 关键词 + YOLO 生物框 → 原神元素/场景
                 img = Image.open(io.BytesIO(base64.b64decode(raw["image"]))).convert("RGB")
                 with _lock:
                     self._json(200, genshin_detect_infer(img))
@@ -317,11 +422,13 @@ class H(BaseHTTPRequestHandler):
                 with _lock:
                     self._json(200, ocr_infer(img))
             elif self.path == "/ui_set_baseline":
+                # P3: 保存当前帧为 UI 基线
                 img = Image.open(io.BytesIO(base64.b64decode(raw["image"]))).convert("RGB").resize((160, 90))
                 _baseline["frame"] = np.array(img, dtype=np.float32)
                 _baseline["name"] = raw.get("name", "default")
                 self._json(200, {"ok": True, "name": _baseline["name"]})
             elif self.path == "/ui_diff":
+                # P3: 对比当前帧与基线的 MSE 差异（>阈值判定 UI 变化）
                 if _baseline["frame"] is None:
                     self._json(200, {"changed": False, "mse": 0, "reason": "no baseline"})
                 else:
