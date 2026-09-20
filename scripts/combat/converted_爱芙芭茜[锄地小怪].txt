@@ -1,0 +1,21 @@
+# ==========================================
+# BetterGI Pro 转换脚本
+# 来源: huiyadanli/bettergi-scripts-list
+# 原始: 爱芙芭茜[锄地小怪].txt
+# 分类: combat
+# 转换时间: 2026-09-20 23:52:59
+# ==========================================
+
+// 作者:HZYgrandma
+
+茜特菈莉 e,click(middle) ,q,click(middle) ,e,click(middle) 
+芙宁娜 e,click(middle) ,q,click(middle) 
+爱可菲 e,q,click(middle) 
+芭芭拉 e,click(middle) ,q,click(middle) ,attack(3),click(middle) 
+茜特菈莉 e,click(middle) ,q,click(middle) ,e,click(middle) 
+爱可菲 e,q,click(middle) 
+芙宁娜 e,click(middle) ,q,click(middle) 
+芭芭拉 e,click(middle) ,q,click(middle) ,attack(4),click(middle) ,e,click(middle)
+茜特菈莉 e,click(middle) ,q,click(middle) ,e,click(middle) 
+爱可菲 e,q,click(middle) 
+芭芭拉 q,click(middle),attack(4),click(middle) ,e
