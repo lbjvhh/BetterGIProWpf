@@ -1,0 +1,16 @@
+# ==========================================
+# BetterGI Pro 转换脚本
+# 来源: huiyadanli/bettergi-scripts-list
+# 原始: 仆人纯火.txt
+# 分类: combat
+# 转换时间: 2026-09-20 23:48:06
+# ==========================================
+
+// 作者:佚名
+// 描述:
+
+仆人 e
+钟离 s(0.1),e(hold)
+班尼特 e,q
+枫原万叶 attack,dash,e,attack,q
+仆人 e,charge(0.52),attack(2),dash,attack(2),dash
