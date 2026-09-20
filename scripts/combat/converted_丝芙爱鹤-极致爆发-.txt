@@ -1,0 +1,18 @@
+# ==========================================
+# BetterGI Pro 转换脚本
+# 来源: huiyadanli/bettergi-scripts-list
+# 原始: 丝芙爱鹤-极致爆发-.txt
+# 分类: combat
+# 转换时间: 2026-09-20 23:47:50
+# ==========================================
+
+// 作者:火山
+// 描述: 副本测试版，高充能需求, 3拐1
+// 版本: v1.0
+
+
+丝柯克 attack(0.08),keydown(E),wait(0.25),attack(0.1),keyup(E)
+芙宁娜 e,wait(0.3),keypress(Q),wait(0.2),keypress(Q),wait(0.2),keypress(Q)
+爱可菲 e,wait(0.3),keypress(Q),wait(0.2),keypress(Q),wait(0.2),keypress(Q)
+申鹤 e,wait(0.3),keypress(Q),wait(0.2),keypress(Q),wait(0.2),keypress(Q)
+丝柯克 e,wait(0.15),charge(0.3),attack(4),charge(0.3),attack(4)
