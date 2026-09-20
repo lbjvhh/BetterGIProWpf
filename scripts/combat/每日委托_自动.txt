@@ -1,0 +1,15 @@
+# 每日委托自动化
+# 用法: 传送到蒙德后启动
+
+key m 500
+wait 2.0
+click 400 300
+wait 1.0
+key f 500
+wait 5.0
+key w 2000
+wait 0.5
+key e 1000
+wait 1.0
+key j 500
+wait 3.0
