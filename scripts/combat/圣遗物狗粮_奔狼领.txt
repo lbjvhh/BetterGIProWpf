@@ -1,0 +1,12 @@
+# 圣遗物狗粮路线 - 奔狼领
+# 用法: 传送到奔狼领后启动
+
+key w 2000
+wait 0.5
+key a 1000
+key w 1500
+key f 500
+wait 0.5
+key w 2000
+key d 500
+key f 500
