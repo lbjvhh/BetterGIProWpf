@@ -1,0 +1,15 @@
+# ==========================================
+# BetterGI Pro 转换脚本
+# 来源: huiyadanli/bettergi-scripts-list
+# 原始: 万芙芭茜.txt
+# 分类: combat
+# 转换时间: 2026-09-20 23:47:04
+# ==========================================
+
+// 作者:HZYgrandma
+
+茜特菈莉 e,click(middle) ,q,click(middle) ,e,click(middle) 
+芙宁娜 e,click(middle) ,q,click(middle) 
+枫原万叶 e(hold),wait(0.2),attack,click(middle) 
+芭芭拉 e,click(middle) ,q,click(middle) ,attack(3),click(middle) 
+枫原万叶 e(hold),wait(0.2),attack,click(middle) 
