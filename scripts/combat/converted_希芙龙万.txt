@@ -1,0 +1,17 @@
+# ==========================================
+# BetterGI Pro 转换脚本
+# 来源: huiyadanli/bettergi-scripts-list
+# 原始: 希芙龙万.txt
+# 分类: combat
+# 转换时间: 2026-09-20 23:50:50
+# ==========================================
+
+// 作者:yweer
+// 描述:最好1命龙
+
+
+那维莱特 e
+希诺宁 q,e,attack,attack,attack
+芙宁娜 e,q
+枫原万叶 e(hold),attack,q
+那维莱特 e,q,charge(3),charge(3),charge(3)
